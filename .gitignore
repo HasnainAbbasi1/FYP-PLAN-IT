@@ -27,6 +27,7 @@ env.bak/
 **/output/*.png
 **/output/*.jpg
 **/output/*.jpeg
+**/output/*.json
 backend/python/output/
 backend/python/app/output/
 backend/storage/output/
