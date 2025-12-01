@@ -1,0 +1,120 @@
+{
+  "mean_elevation": 527.0,
+  "max_elevation": 527.0,
+  "min_elevation": 527.0,
+  "std_elevation": 0.0,
+  "data_types_processed": [
+    "dem"
+  ],
+  "target_crs": "EPSG:4326",
+  "preprocessing_applied": {},
+  "slope_analysis": {
+    "mean_slope": 0.0,
+    "max_slope": 0.0,
+    "min_slope": 0.0,
+    "std_slope": 0.0,
+    "category_stats": {}
+  },
+  "flood_analysis": {
+    "flood_stats": {
+      "high_risk_area": 0,
+      "medium_risk_area": 0,
+      "low_risk_area": 904
+    }
+  },
+  "erosion_analysis": {
+    "erosion_stats": {
+      "mean_soil_loss": 0.0,
+      "high_erosion_area": 0
+    }
+  },
+  "water_availability": {},
+  "zoning_analysis": {
+    "zoning_stats": {
+      "1": {
+        "name": "Water Body",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "2": {
+        "name": "Suitable for Development",
+        "area_percentage": 89.27,
+        "pixel_count": 807
+      },
+      "3": {
+        "name": "Limited Development",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "4": {
+        "name": "Conservation Area",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "5": {
+        "name": "High-Risk (Avoid)",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      }
+    }
+  },
+  "validation": {
+    "geojson_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Valid Polygon geometry",
+        "Polygon area: 0.000070 square degrees"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    },
+    "dem_file_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Raster dimensions: 49 x 25",
+        "Band count: 1",
+        "Data type: int16",
+        "CRS: EPSG:4326",
+        "CRS is defined: EPSG:4326",
+        "Bounds: BoundingBox(left=73.12208333336687, bottom=33.700138888885405, right=73.13569444447799, top=33.70708333332985)",
+        "NoData percentage: 0.0%",
+        "Elevation range: 527.00 to 527.00m"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 8
+      }
+    },
+    "processing_validation": {
+      "is_valid": 0,
+      "errors": [
+        "High percentage of missing data: 26.2%"
+      ],
+      "warnings": [
+        "No elevation variation detected (flat terrain)"
+      ],
+      "info": [
+        "Elevation statistics - Mean: 527.00m, Std: 0.00m",
+        "Elevation range: 527.00m to 527.00m"
+      ],
+      "summary": {
+        "error_count": 1,
+        "warning_count": 1,
+        "info_count": 2
+      }
+    }
+  },
+  "processing_timestamp": "2025-11-24T17:21:30.539481",
+  "total_pixels": 904,
+  "water_pixels": 0,
+  "land_pixels": 904,
+  "analysis_type": "basic"
+}

@@ -1,0 +1,30 @@
+{
+  "counts": {
+    "0": {
+      "pixels": 2920,
+      "area_m2": 2317498.178592831
+    },
+    "1": {
+      "pixels": 526,
+      "area_m2": 417467.13765062636
+    },
+    "2": {
+      "pixels": 0,
+      "area_m2": 0.0
+    }
+  },
+  "percentages": {
+    "low": 84.73592571096924,
+    "medium": 15.26407428903076,
+    "high": 0.0
+  },
+  "feature_names": [
+    "slope"
+  ],
+  "water": {
+    "area_percentage": 0.0,
+    "water_pixels": 0,
+    "threshold_m": 5.0
+  },
+  "processing_timestamp": "2025-11-25T11:00:48.200440"
+}

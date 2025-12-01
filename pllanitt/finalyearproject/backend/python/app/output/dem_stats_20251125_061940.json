@@ -1,0 +1,132 @@
+{
+  "mean_elevation": 521.5070422535211,
+  "max_elevation": 525.0,
+  "min_elevation": 517.0,
+  "std_elevation": 1.8066640290069422,
+  "data_types_processed": [
+    "dem"
+  ],
+  "target_crs": "EPSG:4326",
+  "preprocessing_applied": {},
+  "slope_analysis": {
+    "mean_slope": 39.78648564896942,
+    "max_slope": 68.19859051364818,
+    "min_slope": 0.0,
+    "std_slope": 16.925111223681206,
+    "category_stats": {}
+  },
+  "flood_analysis": {
+    "flood_stats": {
+      "high_risk_area": 0,
+      "medium_risk_area": 0,
+      "low_risk_area": 71
+    }
+  },
+  "erosion_analysis": {
+    "erosion_stats": {
+      "mean_soil_loss": 19.89324282448471,
+      "high_erosion_area": 32
+    }
+  },
+  "water_availability": {},
+  "zoning_analysis": {
+    "zoning_stats": {
+      "1": {
+        "name": "Water Body",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "2": {
+        "name": "Suitable for Development",
+        "area_percentage": 5.63,
+        "pixel_count": 4
+      },
+      "3": {
+        "name": "Limited Development",
+        "area_percentage": 11.27,
+        "pixel_count": 8
+      },
+      "4": {
+        "name": "Conservation Area",
+        "area_percentage": 29.58,
+        "pixel_count": 21
+      },
+      "5": {
+        "name": "High-Risk (Avoid)",
+        "area_percentage": 15.49,
+        "pixel_count": 11
+      }
+    }
+  },
+  "validation": {
+    "geojson_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Valid Polygon geometry",
+        "Polygon area: 0.000005 square degrees"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    },
+    "dem_file_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Raster dimensions: 12 x 9",
+        "Band count: 1",
+        "Data type: int16",
+        "CRS: EPSG:4326",
+        "CRS is defined: EPSG:4326",
+        "Bounds: BoundingBox(left=73.02236111114462, bottom=33.657361111107626, right=73.02569444447795, top=33.659861111107624)",
+        "NoData percentage: 0.0%",
+        "Elevation range: 517.00 to 526.00m"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 8
+      }
+    },
+    "processing_validation": {
+      "is_valid": 0,
+      "errors": [
+        "High percentage of missing data: 34.3%"
+      ],
+      "warnings": [],
+      "info": [
+        "Elevation statistics - Mean: 521.51m, Std: 1.81m",
+        "Elevation range: 517.00m to 525.00m"
+      ],
+      "summary": {
+        "error_count": 1,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    }
+  },
+  "processing_timestamp": "2025-11-25T06:19:43.701812",
+  "total_pixels": 71,
+  "water_pixels": 0,
+  "land_pixels": 71,
+  "analysis_type": "basic",
+  "hydrology_summary": {
+    "bounding_box": {
+      "west": 73.022443,
+      "south": 33.657309,
+      "east": 73.025855,
+      "north": 33.659818
+    },
+    "area_deg2": 0.0,
+    "total_features": 0,
+    "waterway_count": 0,
+    "water_body_count": 0,
+    "named_features": 0,
+    "estimated_waterway_length_km": 0.0
+  }
+}

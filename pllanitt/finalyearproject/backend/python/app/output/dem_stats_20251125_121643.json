@@ -1,0 +1,135 @@
+{
+  "mean_elevation": 135.06218012931427,
+  "max_elevation": 145.0,
+  "min_elevation": 129.0,
+  "std_elevation": 1.7578979520151201,
+  "data_types_processed": [
+    "dem"
+  ],
+  "target_crs": "EPSG:4326",
+  "preprocessing_applied": {},
+  "slope_analysis": {
+    "mean_slope": 38.09830066995127,
+    "max_slope": 77.39561735162081,
+    "min_slope": 0.0,
+    "std_slope": 16.141055914372007,
+    "category_stats": {}
+  },
+  "flood_analysis": {
+    "flood_stats": {
+      "high_risk_area": 0,
+      "medium_risk_area": 0,
+      "low_risk_area": 54905
+    }
+  },
+  "erosion_analysis": {
+    "erosion_stats": {
+      "mean_soil_loss": 19.049150334975636,
+      "high_erosion_area": 36299
+    }
+  },
+  "water_availability": {},
+  "zoning_analysis": {
+    "zoning_stats": {
+      "1": {
+        "name": "Water Body",
+        "area_percentage": 0.08,
+        "pixel_count": 42
+      },
+      "2": {
+        "name": "Suitable for Development",
+        "area_percentage": 7.96,
+        "pixel_count": 4369
+      },
+      "3": {
+        "name": "Limited Development",
+        "area_percentage": 24.2,
+        "pixel_count": 13289
+      },
+      "4": {
+        "name": "Conservation Area",
+        "area_percentage": 47.52,
+        "pixel_count": 26092
+      },
+      "5": {
+        "name": "High-Risk (Avoid)",
+        "area_percentage": 18.59,
+        "pixel_count": 10207
+      }
+    }
+  },
+  "validation": {
+    "geojson_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Valid Polygon geometry",
+        "Polygon area: 0.004237 square degrees"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    },
+    "dem_file_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Raster dimensions: 397 x 289",
+        "Band count: 1",
+        "Data type: int16",
+        "CRS: EPSG:4326",
+        "CRS is defined: EPSG:4326",
+        "Bounds: BoundingBox(left=70.89347222225547, bottom=30.527361111107208, right=71.00375000003326, top=30.607638888884996)",
+        "NoData percentage: 0.0%",
+        "Elevation range: 124.00 to 146.00m"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 8
+      }
+    },
+    "processing_validation": {
+      "is_valid": 0,
+      "errors": [
+        "High percentage of missing data: 52.1%"
+      ],
+      "warnings": [],
+      "info": [
+        "Elevation statistics - Mean: 135.06m, Std: 1.76m",
+        "Elevation range: 129.00m to 145.00m"
+      ],
+      "summary": {
+        "error_count": 1,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    }
+  },
+  "processing_timestamp": "2025-11-25T12:16:54.651646",
+  "total_pixels": 54905,
+  "water_pixels": 42,
+  "land_pixels": 54863,
+  "analysis_type": "basic",
+  "hydrology_summary": {
+    "bounding_box": {
+      "west": 70.893745,
+      "south": 30.527093,
+      "east": 71.003952,
+      "north": 30.607461
+    },
+    "area_deg2": 0.0089,
+    "total_features": 3,
+    "waterway_count": 3,
+    "water_body_count": 0,
+    "named_features": 1,
+    "estimated_waterway_length_km": 209.85,
+    "sample_names": [
+      "Muzaffargarh Canal Taunsa-Panjnad Canal"
+    ]
+  }
+}

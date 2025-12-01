@@ -1,0 +1,147 @@
+{
+  "mean_elevation": 211.636,
+  "max_elevation": 232.0,
+  "min_elevation": 193.0,
+  "std_elevation": 4.1667138130665995,
+  "data_types_processed": [
+    "dem"
+  ],
+  "target_crs": "EPSG:4326",
+  "preprocessing_applied": {},
+  "slope_analysis": {
+    "mean_slope": 59.59841995243048,
+    "max_slope": 84.296484743617,
+    "min_slope": 0.0,
+    "std_slope": 16.262223200939623,
+    "category_stats": {
+      "1": {
+        "name": "Flat (0-15\u00b0)",
+        "area_percentage": 0,
+        "pixel_count": 0
+      },
+      "2": {
+        "name": "Moderate (15-30\u00b0)",
+        "area_percentage": 1.7,
+        "pixel_count": 17
+      },
+      "3": {
+        "name": "Steep (30-50\u00b0)",
+        "area_percentage": 5.8,
+        "pixel_count": 58
+      },
+      "4": {
+        "name": "Very Steep (30-50\u00b0)",
+        "area_percentage": 19.3,
+        "pixel_count": 193
+      },
+      "5": {
+        "name": "Extremely Steep (>50\u00b0)",
+        "area_percentage": 73.2,
+        "pixel_count": 732
+      }
+    }
+  },
+  "flood_analysis": {
+    "flood_stats": {
+      "high_risk_area": 0,
+      "medium_risk_area": 0,
+      "low_risk_area": 1000,
+      "total_risk_area": 0
+    }
+  },
+  "erosion_analysis": {
+    "erosion_stats": {
+      "mean_soil_loss": 29.79920997621524,
+      "high_erosion_area": 925,
+      "recommendations": [
+        "Implement terracing on slopes >30\u00b0",
+        "Use erosion control blankets on steep areas",
+        "Plant vegetation to stabilize soil"
+      ]
+    }
+  },
+  "zoning_analysis": {
+    "zoning_stats": {
+      "1": {
+        "name": "Water Body",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "2": {
+        "name": "Suitable for Development",
+        "area_percentage": 1.7,
+        "pixel_count": 17
+      },
+      "3": {
+        "name": "Limited Development",
+        "area_percentage": 5.8,
+        "pixel_count": 58
+      },
+      "4": {
+        "name": "Conservation Area",
+        "area_percentage": 19.3,
+        "pixel_count": 193
+      },
+      "5": {
+        "name": "High-Risk (Avoid)",
+        "area_percentage": 73.2,
+        "pixel_count": 732
+      }
+    }
+  },
+  "validation": {
+    "geojson_validation": {
+      "is_valid": true,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Valid Polygon geometry",
+        "Polygon area: 0.000078 square degrees"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    },
+    "dem_file_validation": {
+      "is_valid": true,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Raster dimensions: 40 x 25",
+        "Band count: 1",
+        "Data type: int16",
+        "CRS: GEOGCS[\"WGS 84\",DATUM[\"World Geodetic System 1984\",SPHEROID[\"WGS 84\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST]]",
+        "CRS is defined: GEOGCS[\"WGS 84\",DATUM[\"World Geodetic System 1984\",SPHEROID[\"WGS 84\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST]]",
+        "Bounds: BoundingBox(left=74.29986111114479, bottom=31.557638888885123, right=74.3109722222559, top=31.56458333332957)",
+        "NoData percentage: 0.0%",
+        "Elevation range: 193.00 to 232.00m"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 8
+      }
+    },
+    "processing_validation": {
+      "is_valid": true,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Elevation statistics - Mean: 211.64m, Std: 4.17m",
+        "Elevation range: 193.00m to 232.00m",
+        "Missing data percentage: 0.0%"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 3
+      }
+    }
+  },
+  "processing_timestamp": "2025-10-09T09:57:03.557137",
+  "total_pixels": 1000,
+  "water_pixels": 0,
+  "land_pixels": 1000
+}

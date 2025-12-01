@@ -1,0 +1,135 @@
+{
+  "mean_elevation": 159.80923568420542,
+  "max_elevation": 176.0,
+  "min_elevation": 146.0,
+  "std_elevation": 4.0280323570827825,
+  "data_types_processed": [
+    "dem"
+  ],
+  "target_crs": "EPSG:4326",
+  "preprocessing_applied": {},
+  "slope_analysis": {
+    "mean_slope": 45.39014340009991,
+    "max_slope": 84.02377120601057,
+    "min_slope": 0.0,
+    "std_slope": 17.342604770810777,
+    "category_stats": {}
+  },
+  "flood_analysis": {
+    "flood_stats": {
+      "high_risk_area": 0,
+      "medium_risk_area": 0,
+      "low_risk_area": 20659
+    }
+  },
+  "erosion_analysis": {
+    "erosion_stats": {
+      "mean_soil_loss": 22.695071700049954,
+      "high_erosion_area": 15745
+    }
+  },
+  "water_availability": {},
+  "zoning_analysis": {
+    "zoning_stats": {
+      "1": {
+        "name": "Water Body",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "2": {
+        "name": "Suitable for Development",
+        "area_percentage": 4.98,
+        "pixel_count": 1028
+      },
+      "3": {
+        "name": "Limited Development",
+        "area_percentage": 15.7,
+        "pixel_count": 3243
+      },
+      "4": {
+        "name": "Conservation Area",
+        "area_percentage": 39.13,
+        "pixel_count": 8083
+      },
+      "5": {
+        "name": "High-Risk (Avoid)",
+        "area_percentage": 37.09,
+        "pixel_count": 7662
+      }
+    }
+  },
+  "validation": {
+    "geojson_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Valid Polygon geometry",
+        "Polygon area: 0.001594 square degrees"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    },
+    "dem_file_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Raster dimensions: 276 x 140",
+        "Band count: 1",
+        "Data type: int16",
+        "CRS: EPSG:4326",
+        "CRS is defined: EPSG:4326",
+        "Bounds: BoundingBox(left=72.58819444447789, bottom=28.132638888884667, right=72.66486111114457, top=28.171527777773562)",
+        "NoData percentage: 0.0%",
+        "Elevation range: 146.00 to 180.00m"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 8
+      }
+    },
+    "processing_validation": {
+      "is_valid": 0,
+      "errors": [
+        "High percentage of missing data: 46.5%"
+      ],
+      "warnings": [],
+      "info": [
+        "Elevation statistics - Mean: 159.81m, Std: 4.03m",
+        "Elevation range: 146.00m to 176.00m"
+      ],
+      "summary": {
+        "error_count": 1,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    }
+  },
+  "processing_timestamp": "2025-11-25T10:35:19.383893",
+  "total_pixels": 20659,
+  "water_pixels": 0,
+  "land_pixels": 20659,
+  "analysis_type": "basic",
+  "hydrology_summary": {
+    "bounding_box": {
+      "west": 72.588284,
+      "south": 28.132454,
+      "east": 72.664845,
+      "north": 28.171333
+    },
+    "area_deg2": 0.003,
+    "total_features": 3,
+    "waterway_count": 1,
+    "water_body_count": 2,
+    "named_features": 1,
+    "estimated_waterway_length_km": 25.16,
+    "sample_names": [
+      "Indira Gandhi Canal"
+    ]
+  }
+}

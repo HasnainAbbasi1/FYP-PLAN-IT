@@ -1,0 +1,135 @@
+{
+  "mean_elevation": 499.6,
+  "max_elevation": 514.0,
+  "min_elevation": 484.0,
+  "std_elevation": 5.6863516066626225,
+  "data_types_processed": [
+    "dem"
+  ],
+  "target_crs": "EPSG:4326",
+  "preprocessing_applied": {},
+  "slope_analysis": {
+    "mean_slope": 57.20791880452204,
+    "max_slope": 82.67396304684769,
+    "min_slope": 0.0,
+    "std_slope": 16.380768946841272,
+    "category_stats": {}
+  },
+  "flood_analysis": {
+    "flood_stats": {
+      "high_risk_area": 0,
+      "medium_risk_area": 0,
+      "low_risk_area": 740
+    }
+  },
+  "erosion_analysis": {
+    "erosion_stats": {
+      "mean_soil_loss": 28.60395940226102,
+      "high_erosion_area": 595
+    }
+  },
+  "water_availability": {},
+  "zoning_analysis": {
+    "zoning_stats": {
+      "1": {
+        "name": "Water Body",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "2": {
+        "name": "Suitable for Development",
+        "area_percentage": 1.22,
+        "pixel_count": 9
+      },
+      "3": {
+        "name": "Limited Development",
+        "area_percentage": 5.81,
+        "pixel_count": 43
+      },
+      "4": {
+        "name": "Conservation Area",
+        "area_percentage": 22.57,
+        "pixel_count": 167
+      },
+      "5": {
+        "name": "High-Risk (Avoid)",
+        "area_percentage": 57.84,
+        "pixel_count": 428
+      }
+    }
+  },
+  "validation": {
+    "geojson_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Valid Polygon geometry",
+        "Polygon area: 0.000057 square degrees"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    },
+    "dem_file_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Raster dimensions: 39 x 27",
+        "Band count: 1",
+        "Data type: int16",
+        "CRS: EPSG:4326",
+        "CRS is defined: EPSG:4326",
+        "Bounds: BoundingBox(left=73.18263888892244, bottom=33.629305555552065, right=73.19347222225578, top=33.636805555552066)",
+        "NoData percentage: 0.0%",
+        "Elevation range: 484.00 to 516.00m"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 8
+      }
+    },
+    "processing_validation": {
+      "is_valid": 0,
+      "errors": [
+        "High percentage of missing data: 29.7%"
+      ],
+      "warnings": [],
+      "info": [
+        "Elevation statistics - Mean: 499.60m, Std: 5.69m",
+        "Elevation range: 484.00m to 514.00m"
+      ],
+      "summary": {
+        "error_count": 1,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    }
+  },
+  "processing_timestamp": "2025-11-26T01:45:21.899325",
+  "total_pixels": 740,
+  "water_pixels": 0,
+  "land_pixels": 740,
+  "analysis_type": "basic",
+  "hydrology_summary": {
+    "bounding_box": {
+      "west": 73.182723,
+      "south": 33.62934,
+      "east": 73.193668,
+      "north": 33.636768
+    },
+    "area_deg2": 0.0001,
+    "total_features": 2,
+    "waterway_count": 1,
+    "water_body_count": 1,
+    "named_features": 1,
+    "estimated_waterway_length_km": 6.4,
+    "sample_names": [
+      "Korang River Tributery"
+    ]
+  }
+}

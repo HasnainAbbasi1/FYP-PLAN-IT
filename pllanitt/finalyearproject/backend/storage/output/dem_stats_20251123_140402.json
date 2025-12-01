@@ -1,0 +1,513 @@
+{
+  "mean_elevation": 2521.628099173554,
+  "max_elevation": 2650.0,
+  "min_elevation": 2367.0,
+  "std_elevation": 76.76809902959864,
+  "data_types_processed": [
+    "dem"
+  ],
+  "target_crs": "EPSG:4326",
+  "preprocessing_applied": {},
+  "slope_analysis": {
+    "mean_slope": 78.2831401064265,
+    "max_slope": 89.99979585659308,
+    "min_slope": 1.3340213222681154e-08,
+    "std_slope": 30.284535090878247,
+    "slope_distribution": {
+      "nearly_level": {
+        "pixel_count": 22,
+        "area_percentage": 13.017751479289942,
+        "min_slope": 0,
+        "max_slope": 3
+      },
+      "gently_sloping": {
+        "pixel_count": 0,
+        "area_percentage": 0.0,
+        "min_slope": 3,
+        "max_slope": 8
+      },
+      "moderately_sloping": {
+        "pixel_count": 0,
+        "area_percentage": 0.0,
+        "min_slope": 8,
+        "max_slope": 15
+      },
+      "strongly_sloping": {
+        "pixel_count": 0,
+        "area_percentage": 0.0,
+        "min_slope": 15,
+        "max_slope": 25
+      },
+      "moderately_steep": {
+        "pixel_count": 0,
+        "area_percentage": 0.0,
+        "min_slope": 25,
+        "max_slope": 35
+      },
+      "steep": {
+        "pixel_count": 0,
+        "area_percentage": 0.0,
+        "min_slope": 35,
+        "max_slope": 50
+      },
+      "very_steep": {
+        "pixel_count": 147,
+        "area_percentage": 86.98224852071006,
+        "min_slope": 50,
+        "max_slope": 90
+      }
+    },
+    "category_stats": {
+      "1": {
+        "name": "Flat (0-15\u00b0)",
+        "area_percentage": 13.02,
+        "pixel_count": 22
+      },
+      "2": {
+        "name": "Moderate (15-30\u00b0)",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "3": {
+        "name": "Steep (30-50\u00b0)",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "4": {
+        "name": "Very Steep (50-70\u00b0)",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "5": {
+        "name": "Extremely Steep (>70\u00b0)",
+        "area_percentage": 71.9,
+        "pixel_count": 87
+      }
+    }
+  },
+  "flood_analysis": {
+    "flood_risk_map": [
+      [
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        2.2,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001
+      ],
+      [
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        2.2,
+        2.2,
+        2.2,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001
+      ],
+      [
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001
+      ],
+      [
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        1.4000000000000001,
+        1.4000000000000001
+      ],
+      [
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.0,
+        1.4000000000000001,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        1.4000000000000001
+      ],
+      [
+        1.4000000000000001,
+        1.4000000000000001,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2
+      ],
+      [
+        1.4000000000000001,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.8000000000000003,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2
+      ],
+      [
+        1.4000000000000001,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        2.2
+      ],
+      [
+        1.4000000000000001,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        2.2,
+        2.2,
+        2.2,
+        2.2,
+        1.4000000000000001
+      ],
+      [
+        1.4000000000000001,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.8000000000000003,
+        2.2,
+        2.2,
+        1.4000000000000001,
+        1.4000000000000001
+      ],
+      [
+        1.4000000000000001,
+        1.4000000000000001,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001
+      ],
+      [
+        1.4000000000000001,
+        1.4000000000000001,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001
+      ],
+      [
+        1.4000000000000001,
+        1.4000000000000001,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001
+      ],
+      [
+        1.4000000000000001,
+        1.4000000000000001,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001
+      ],
+      [
+        1.4000000000000001,
+        1.4000000000000001,
+        1.0,
+        1.0,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001,
+        1.4000000000000001
+      ]
+    ],
+    "risk_statistics": {
+      "high_risk_area_percent": 0.0,
+      "medium_risk_area_percent": 25.77777777777778,
+      "low_risk_area_percent": 74.22222222222223,
+      "high_risk_area_pixels": 0,
+      "medium_risk_area_pixels": 58,
+      "low_risk_area_pixels": 167,
+      "mean_risk_score": 1.4924444444444445,
+      "max_risk_score": 2.2
+    },
+    "risk_factors": {
+      "elevation_risk": {
+        "mean": 1.231111111111111,
+        "high_risk_pixels": 58
+      },
+      "flow_accumulation_risk": {
+        "mean": 1.0,
+        "high_risk_pixels": 0
+      },
+      "drainage_proximity_risk": {
+        "mean": 3.0,
+        "high_risk_pixels": 225
+      }
+    },
+    "recommendations": [
+      "\u2705 LOW FLOOD RISK: Most areas are safe from flooding.",
+      "Monitor drainage channels and maintain clear water flow paths.",
+      "Consider elevation requirements for new construction."
+    ]
+  },
+  "erosion_analysis": {
+    "annual_soil_loss": {
+      "mean": 1.8000000000000003,
+      "max": 1.7999999999999998,
+      "min": 1.7999999999999998,
+      "std": 4.440892098500626e-16,
+      "median": 1.7999999999999998
+    },
+    "erosion_risk_categories": {
+      "high_erosion_percent": 0.0,
+      "medium_erosion_percent": 0.0,
+      "low_erosion_percent": 100.0
+    },
+    "usle_factors": {
+      "R_factor": 200,
+      "K_factor": 0.3,
+      "LS_factor_mean": 0.09999999999999999,
+      "C_factor": 0.3,
+      "P_factor": 1.0
+    },
+    "recommendations": [
+      "\u2705 LOW EROSION RISK: Soil loss is within acceptable limits.",
+      "\u26a0\ufe0f 87.0% of area has slopes >30\u00b0 - requires special attention.",
+      "Consider slope stabilization measures.",
+      "Maintain vegetative cover to reduce erosion.",
+      "Implement proper drainage to prevent water-induced erosion."
+    ]
+  },
+  "water_availability": {
+    "topographic_wetness_index": {
+      "mean": 0.0,
+      "max": 0.0,
+      "min": 0.0,
+      "std": 0.0
+    },
+    "distance_to_water": {
+      "mean_meters": 0.003193677002247553,
+      "min_meters": 0.0002777777777778146,
+      "max_meters": 0.005699523480190531
+    },
+    "water_availability_score": {
+      "mean": 0.29999904189689935,
+      "max": 0.29999991666666664,
+      "min": 0.2999982901429559,
+      "classification": "Very Low - Poor water availability"
+    },
+    "flow_accumulation_stats": {
+      "mean": 1.0,
+      "max": 1.0
+    }
+  },
+  "zoning_analysis": {
+    "zoning_stats": {
+      "1": {
+        "name": "Water Body",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "2": {
+        "name": "Suitable for Development",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "3": {
+        "name": "Limited Development",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "4": {
+        "name": "Conservation Area",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "5": {
+        "name": "High-Risk (Avoid)",
+        "area_percentage": 71.9,
+        "pixel_count": 87
+      }
+    }
+  },
+  "validation": {
+    "geojson_validation": {
+      "is_valid": true,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Valid Polygon geometry",
+        "Polygon area: 0.000009 square degrees"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    },
+    "dem_file_validation": {
+      "is_valid": true,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Raster dimensions: 15 x 15",
+        "Band count: 1",
+        "Data type: int16",
+        "CRS: EPSG:4326",
+        "CRS is defined: EPSG:4326",
+        "Bounds: BoundingBox(left=73.39486111114468, bottom=34.02847222221878, right=73.39902777781134, top=34.03263888888545)",
+        "NoData percentage: 0.0%",
+        "Elevation range: 2310.00 to 2666.00m"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 8
+      }
+    },
+    "processing_validation": {
+      "is_valid": false,
+      "errors": [
+        "High percentage of missing data: 46.2%"
+      ],
+      "warnings": [],
+      "info": [
+        "Elevation statistics - Mean: 2521.63m, Std: 76.77m",
+        "Elevation range: 2367.00m to 2650.00m"
+      ],
+      "summary": {
+        "error_count": 1,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    }
+  },
+  "processing_timestamp": "2025-11-23T14:04:03.820505",
+  "total_pixels": 121,
+  "water_pixels": 0,
+  "land_pixels": 121,
+  "analysis_type": "advanced"
+}

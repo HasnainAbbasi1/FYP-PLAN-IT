@@ -1,0 +1,25 @@
+{
+  "counts": {
+    "0": {
+      "pixels": 61790,
+      "area_m2": 58619846.88976992
+    },
+    "1": {
+      "pixels": 91461,
+      "area_m2": 86768567.9945824
+    },
+    "2": {
+      "pixels": 0,
+      "area_m2": 0.0
+    }
+  },
+  "percentages": {
+    "low": 40.3194758924901,
+    "medium": 59.6805241075099,
+    "high": 0.0
+  },
+  "feature_names": [
+    "slope"
+  ],
+  "processing_timestamp": "2025-11-24T18:09:27.907462"
+}

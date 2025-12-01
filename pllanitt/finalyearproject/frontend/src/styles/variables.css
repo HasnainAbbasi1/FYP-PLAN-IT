@@ -1,0 +1,349 @@
+
+:root {
+  /* Base colors */
+  --background: hsla(215, 33%, 9%, 1);
+  --background-rgb: 23, 28, 37;
+  --foreground: hsla(210, 40%, 98%, 1);
+  --foreground-rgb: 241, 245, 249;
+
+  --card: hsla(222, 30%, 15%, 1);
+  --card-rgb: 33, 39, 55;
+  --card-foreground: hsla(210, 40%, 98%, 1);
+  --card-foreground-rgb: 241, 245, 249;
+
+  --popover: hsla(222, 30%, 15%, 1);
+  --popover-rgb: 33, 39, 55;
+  --popover-foreground: hsla(210, 40%, 98%, 1);
+  --popover-foreground-rgb: 241, 245, 249;
+
+  --primary: #2B4D5F;
+  --primary-rgb: 43, 77, 95;
+  --primary-foreground: hsla(210, 40%, 98%, 1);
+  --primary-foreground-rgb: 241, 245, 249;
+  --primary-gradient: linear-gradient(135deg, #2B4D5F 0%, #4588AD 100%);
+  --primary-gradient-text: linear-gradient(135deg, #2B4D5F 0%, #4588AD 50%, rgba(255, 255, 255, 0.81) 100%);
+
+  --secondary: hsla(217, 32%, 20%, 1);
+  --secondary-rgb: 35, 45, 65;
+  --secondary-foreground: hsla(210, 40%, 98%, 1);
+  --secondary-foreground-rgb: 241, 245, 249;
+
+  --muted: hsla(217, 32%, 17%, 1);
+  --muted-rgb: 30, 38, 55;
+  --muted-foreground: hsla(215, 20%, 65%, 1);
+  --muted-foreground-rgb: 156, 163, 175;
+
+  --accent: #4588AD;
+  --accent-rgb: 69, 136, 173;
+  --accent-foreground: hsla(210, 40%, 98%, 1);
+  --accent-foreground-rgb: 241, 245, 249;
+  --accent-gradient: linear-gradient(135deg, #4588AD 0%, #2B4D5F 100%);
+
+  --destructive: hsla(0, 84%, 60%, 1);
+  --destructive-rgb: 245, 61, 61;
+  --destructive-foreground: hsla(210, 40%, 98%, 1);
+  --destructive-foreground-rgb: 241, 245, 249;
+
+  --border: hsla(217, 32%, 20%, 1);
+  --border-rgb: 35, 45, 65;
+  --input: hsla(217, 32%, 20%, 1);
+  --input-rgb: 35, 45, 65;
+  --ring: hsla(212, 70%, 45%, 1);
+  --ring-rgb: 38, 105, 217;
+
+  --radius: 0.5rem;
+
+  /* Sidebar specific colors */
+  --sidebar-background: hsla(222, 43%, 10%, 1);
+  --sidebar-background-rgb: 15, 20, 35;
+  --sidebar-foreground: hsla(210, 20%, 90%, 1);
+  --sidebar-foreground-rgb: 224, 229, 235;
+  --sidebar-primary: hsla(221, 70%, 55%, 1);
+  --sidebar-primary-rgb: 63, 122, 245;
+  --sidebar-primary-foreground: hsla(0, 0%, 100%, 1);
+  --sidebar-primary-foreground-rgb: 255, 255, 255;
+  --sidebar-accent: hsla(217, 30%, 15%, 1);
+  --sidebar-accent-rgb: 27, 35, 50;
+  --sidebar-accent-foreground: hsla(210, 20%, 90%, 1);
+  --sidebar-accent-foreground-rgb: 224, 229, 235;
+  --sidebar-border: hsla(215, 25%, 20%, 1);
+  --sidebar-border-rgb: 38, 48, 66;
+  --sidebar-ring: hsla(217, 70%, 60%, 1);
+  --sidebar-ring-rgb: 81, 133, 242;
+
+  /* Theme colors */
+  --theme-dark: #101522;
+  --theme-dark-rgb: 16, 21, 34;
+  --theme-primary: #1a2139;
+  --theme-primary-rgb: 26, 33, 57;
+  --theme-secondary: #2a3347;
+  --theme-secondary-rgb: 42, 51, 71;
+  --theme-accent: #3f7af5;
+  --theme-accent-rgb: 63, 122, 245;
+  --theme-highlight: #47a3ff;
+  --theme-highlight-rgb: 71, 163, 255;
+  --theme-success: #4cd964;
+  --theme-success-rgb: 76, 217, 100;
+  --theme-warning: #ffcc00;
+  --theme-warning-rgb: 255, 204, 0;
+  --theme-danger: #ff3b30;
+  --theme-danger-rgb: 255, 59, 48;
+
+  /* Text colors */
+  --theme-text-primary: #ffffff;
+  --theme-text-primary-rgb: 255, 255, 255;
+  --theme-text-secondary: #a0a7b7;
+  --theme-text-secondary-rgb: 160, 167, 183;
+  --theme-text-muted: #5a6273;
+  --theme-text-muted-rgb: 90, 98, 115;
+
+  /* Chart colors */
+  --theme-chart-blue: #3f7af5;
+  --theme-chart-blue-rgb: 63, 122, 245;
+  --theme-chart-green: #47ecbb;
+  --theme-chart-green-rgb: 71, 236, 187;
+  --theme-chart-purple: #9b87f5;
+  --theme-chart-purple-rgb: 155, 135, 245;
+
+  /* Urban colors */
+  --urban-primary: #4a6fa5;
+  --urban-primary-rgb: 74, 111, 165;
+  --urban-secondary: #6b9ac4;
+  --urban-secondary-rgb: 107, 154, 196;
+  --urban-accent: #97d8c4;
+  --urban-accent-rgb: 151, 216, 196;
+  --urban-muted: #f2f7fa;
+  --urban-muted-rgb: 242, 247, 250;
+  --urban-dark: #2d3e50;
+  --urban-dark-rgb: 45, 62, 80;
+
+  /* Color palette */
+  --blue-50: rgb(239, 246, 255);
+  --blue-50-rgb: 239, 246, 255;
+  --blue-100: rgb(219, 234, 254);
+  --blue-100-rgb: 219, 234, 254;
+  --blue-200: rgb(191, 219, 254);
+  --blue-200-rgb: 191, 219, 254;
+  --blue-300: rgb(147, 197, 253);
+  --blue-300-rgb: 147, 197, 253;
+  --blue-400: rgb(96, 165, 250);
+  --blue-400-rgb: 96, 165, 250;
+  --blue-500: rgb(59, 130, 246);
+  --blue-500-rgb: 59, 130, 246;
+  --blue-600: rgb(37, 99, 235);
+  --blue-600-rgb: 37, 99, 235;
+  --blue-700: rgb(29, 78, 216);
+  --blue-700-rgb: 29, 78, 216;
+  --blue-800: rgb(30, 64, 175);
+  --blue-800-rgb: 30, 64, 175;
+  --blue-900: rgb(30, 58, 138);
+  --blue-900-rgb: 30, 58, 138;
+
+  --green-50: rgb(240, 253, 244);
+  --green-50-rgb: 240, 253, 244;
+  --green-100: rgb(220, 252, 231);
+  --green-100-rgb: 220, 252, 231;
+  --green-200: rgb(187, 247, 208);
+  --green-200-rgb: 187, 247, 208;
+  --green-300: rgb(134, 239, 172);
+  --green-300-rgb: 134, 239, 172;
+  --green-400: rgb(74, 222, 128);
+  --green-400-rgb: 74, 222, 128;
+  --green-500: rgb(34, 197, 94);
+  --green-500-rgb: 34, 197, 94;
+  --green-600: rgb(22, 163, 74);
+  --green-600-rgb: 22, 163, 74;
+  --green-700: rgb(21, 128, 61);
+  --green-700-rgb: 21, 128, 61;
+  --green-800: rgb(22, 101, 52);
+  --green-800-rgb: 22, 101, 52;
+  --green-900: rgb(20, 83, 45);
+  --green-900-rgb: 20, 83, 45;
+
+  --red-50: rgb(254, 242, 242);
+  --red-50-rgb: 254, 242, 242;
+  --red-100: rgb(254, 226, 226);
+  --red-100-rgb: 254, 226, 226;
+  --red-200: rgb(254, 202, 202);
+  --red-200-rgb: 254, 202, 202;
+  --red-300: rgb(252, 165, 165);
+  --red-300-rgb: 252, 165, 165;
+  --red-400: rgb(248, 113, 113);
+  --red-400-rgb: 248, 113, 113;
+  --red-500: rgb(239, 68, 68);
+  --red-500-rgb: 239, 68, 68;
+  --red-600: rgb(220, 38, 38);
+  --red-600-rgb: 220, 38, 38;
+  --red-700: rgb(185, 28, 28);
+  --red-700-rgb: 185, 28, 28;
+  --red-800: rgb(153, 27, 27);
+  --red-800-rgb: 153, 27, 27;
+  --red-900: rgb(127, 29, 29);
+  --red-900-rgb: 127, 29, 29;
+
+  --yellow-50: rgb(254, 252, 232);
+  --yellow-50-rgb: 254, 252, 232;
+  --yellow-100: rgb(254, 249, 195);
+  --yellow-100-rgb: 254, 249, 195;
+  --yellow-200: rgb(254, 240, 138);
+  --yellow-200-rgb: 254, 240, 138;
+  --yellow-300: rgb(253, 224, 71);
+  --yellow-300-rgb: 253, 224, 71;
+  --yellow-400: rgb(250, 204, 21);
+  --yellow-400-rgb: 250, 204, 21;
+  --yellow-500: rgb(234, 179, 8);
+  --yellow-500-rgb: 234, 179, 8;
+  --yellow-600: rgb(202, 138, 4);
+  --yellow-600-rgb: 202, 138, 4;
+  --yellow-700: rgb(161, 98, 7);
+  --yellow-700-rgb: 161, 98, 7;
+  --yellow-800: rgb(133, 77, 14);
+  --yellow-800-rgb: 133, 77, 14;
+  --yellow-900: rgb(113, 63, 18);
+  --yellow-900-rgb: 113, 63, 18;
+
+  --purple-50: rgb(250, 245, 255);
+  --purple-50-rgb: 250, 245, 255;
+  --purple-100: rgb(243, 232, 255);
+  --purple-100-rgb: 243, 232, 255;
+  --purple-200: rgb(233, 213, 255);
+  --purple-200-rgb: 233, 213, 255;
+  --purple-300: rgb(216, 180, 254);
+  --purple-300-rgb: 216, 180, 254;
+  --purple-400: rgb(192, 132, 252);
+  --purple-400-rgb: 192, 132, 252;
+  --purple-500: rgb(168, 85, 247);
+  --purple-500-rgb: 168, 85, 247;
+  --purple-600: rgb(147, 51, 234);
+  --purple-600-rgb: 147, 51, 234;
+  --purple-700: rgb(126, 34, 206);
+  --purple-700-rgb: 126, 34, 206;
+  --purple-800: rgb(107, 33, 168);
+  --purple-800-rgb: 107, 33, 168;
+  --purple-900: rgb(88, 28, 135);
+  --purple-900-rgb: 88, 28, 135;
+
+  --gray-50: rgb(249, 250, 251);
+  --gray-50-rgb: 249, 250, 251;
+  --gray-100: rgb(243, 244, 246);
+  --gray-100-rgb: 243, 244, 246;
+  --gray-200: rgb(229, 231, 235);
+  --gray-200-rgb: 229, 231, 235;
+  --gray-300: rgb(209, 213, 219);
+  --gray-300-rgb: 209, 213, 219;
+  --gray-400: rgb(156, 163, 175);
+  --gray-400-rgb: 156, 163, 175;
+  --gray-500: rgb(107, 114, 128);
+  --gray-500-rgb: 107, 114, 128;
+  --gray-600: rgb(75, 85, 99);
+  --gray-600-rgb: 75, 85, 99;
+  --gray-700: rgb(55, 65, 81);
+  --gray-700-rgb: 55, 65, 81;
+  --gray-800: rgb(31, 41, 55);
+  --gray-800-rgb: 31, 41, 55;
+  --gray-900: rgb(17, 24, 39);
+  --gray-900-rgb: 17, 24, 39;
+}
+
+.light {
+  --background: hsla(0, 0%, 100%, 1);
+  --background-rgb: 255, 255, 255;
+  --foreground: hsla(222.2, 84%, 4.9%, 1);
+  --foreground-rgb: 17, 24, 39;
+
+  --card: hsla(0, 0%, 100%, 1);
+  --card-rgb: 255, 255, 255;
+  --card-foreground: hsla(222.2, 84%, 4.9%, 1);
+  --card-foreground-rgb: 17, 24, 39;
+
+  --popover: hsla(0, 0%, 100%, 1);
+  --popover-rgb: 255, 255, 255;
+  --popover-foreground: hsla(222.2, 84%, 4.9%, 1);
+  --popover-foreground-rgb: 17, 24, 39;
+
+  --primary: #2B4D5F;
+  --primary-rgb: 43, 77, 95;
+  --primary-foreground: hsla(210, 40%, 98%, 1);
+  --primary-foreground-rgb: 241, 245, 249;
+  --primary-gradient: linear-gradient(135deg, #2B4D5F 0%, #4588AD 100%);
+  --primary-gradient-text: linear-gradient(135deg, #2B4D5F 0%, #4588AD 50%, rgba(255, 255, 255, 0.81) 100%);
+
+  --secondary: hsla(210, 40%, 96.1%, 1);
+  --secondary-rgb: 241, 245, 249;
+  --secondary-foreground: hsla(222.2, 47.4%, 11.2%, 1);
+  --secondary-foreground-rgb: 30, 41, 59;
+
+  --muted: hsla(210, 40%, 96.1%, 1);
+  --muted-rgb: 241, 245, 249;
+  --muted-foreground: hsla(215.4, 16.3%, 46.9%, 1);
+  --muted-foreground-rgb: 107, 114, 128;
+
+  --accent: #4588AD;
+  --accent-rgb: 69, 136, 173;
+  --accent-foreground: hsla(222.2, 47.4%, 11.2%, 1);
+  --accent-foreground-rgb: 30, 41, 59;
+  --accent-gradient: linear-gradient(135deg, #4588AD 0%, #2B4D5F 100%);
+
+  --destructive: hsla(0, 84.2%, 60.2%, 1);
+  --destructive-rgb: 245, 61, 61;
+  --destructive-foreground: hsla(210, 40%, 98%, 1);
+  --destructive-foreground-rgb: 241, 245, 249;
+
+  --border: hsla(214.3, 31.8%, 91.4%, 1);
+  --border-rgb: 226, 232, 240;
+  --input: hsla(214.3, 31.8%, 91.4%, 1);
+  --input-rgb: 226, 232, 240;
+  --ring: hsla(221, 70%, 55%, 1);
+  --ring-rgb: 63, 122, 245;
+
+  --sidebar-background: hsla(0, 0%, 98%, 1);
+  --sidebar-background-rgb: 250, 250, 250;
+  --sidebar-foreground: hsla(240, 5.3%, 26.1%, 1);
+  --sidebar-foreground-rgb: 66, 66, 70;
+  --sidebar-primary: hsla(240, 5.9%, 10%, 1);
+  --sidebar-primary-rgb: 26, 26, 27;
+  --sidebar-primary-foreground: hsla(0, 0%, 98%, 1);
+  --sidebar-primary-foreground-rgb: 250, 250, 250;
+  --sidebar-accent: hsla(240, 4.8%, 95.9%, 1);
+  --sidebar-accent-rgb: 244, 244, 245;
+  --sidebar-accent-foreground: hsla(240, 5.9%, 10%, 1);
+  --sidebar-accent-foreground-rgb: 26, 26, 27;
+  --sidebar-border: hsla(220, 13%, 91%, 1);
+  --sidebar-border-rgb: 228, 231, 236;
+  --sidebar-ring: hsla(217.2, 91.2%, 59.8%, 1);
+  --sidebar-ring-rgb: 56, 135, 252;
+
+  /* Light theme colors */
+  --theme-dark: #ffffff;
+  --theme-dark-rgb: 255, 255, 255;
+  --theme-primary: #f8fafc;
+  --theme-primary-rgb: 248, 250, 252;
+  --theme-secondary: #f1f5f9;
+  --theme-secondary-rgb: 241, 245, 249;
+  --theme-accent: #4588AD;
+  --theme-accent-rgb: 69, 136, 173;
+  --theme-highlight: #2B4D5F;
+  --theme-highlight-rgb: 43, 77, 95;
+  --theme-success: #10b981;
+  --theme-success-rgb: 16, 185, 129;
+  --theme-warning: #f59e0b;
+  --theme-warning-rgb: 245, 158, 11;
+  --theme-danger: #ef4444;
+  --theme-danger-rgb: 239, 68, 68;
+
+  /* Light text colors */
+  --theme-text-primary: #111827;
+  --theme-text-primary-rgb: 17, 24, 39;
+  --theme-text-secondary: #6b7280;
+  --theme-text-secondary-rgb: 107, 114, 128;
+  --theme-text-muted: #9ca3af;
+  --theme-text-muted-rgb: 156, 163, 175;
+
+  /* Light chart colors */
+  --theme-chart-blue: #3f7af5;
+  --theme-chart-blue-rgb: 63, 122, 245;
+  --theme-chart-green: #10b981;
+  --theme-chart-green-rgb: 16, 185, 129;
+  --theme-chart-purple: #8b5cf6;
+  --theme-chart-purple-rgb: 139, 92, 246;
+}

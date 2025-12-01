@@ -1,0 +1,354 @@
+/* ========================================
+   UNIFIED DESIGN SYSTEM
+   Consistent styling across entire app
+   ======================================== */
+
+/* Global Typography */
+:root {
+  --font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  
+  --gradient-primary: linear-gradient(135deg, #2B4D5F 0%, #4588AD 100%);
+  --gradient-primary-text: linear-gradient(135deg, #2B4D5F 0%, #4588AD 50%, rgba(255, 255, 255, 0.81) 100%);
+  --gradient-accent: linear-gradient(135deg, #4588AD 0%, #2B4D5F 100%);
+  --gradient-background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  
+  --color-primary: #2B4D5F;
+  --color-primary-dark: #1f3a47;
+  --color-accent: #4588AD;
+  --color-accent-light: rgba(255, 255, 255, 0.81);
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 40px -10px rgba(69, 136, 173, 0.3);
+  
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  
+  --transition-fast: 0.2s ease;
+  --transition-base: 0.3s ease;
+  --transition-slow: 0.5s ease;
+  --transition-cubic: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Page Container Base Styles - Consistent padding */
+.page-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-family: var(--font-family);
+  background: var(--gradient-background);
+  min-height: 100vh;
+  animation: fadeIn 0.5s ease-out;
+  color: #1e293b; /* Dark text for visibility */
+}
+
+/* Ensure all page containers have consistent padding */
+[class*="container"]:not(.card-content):not(.card-header):not(.card-footer) {
+  padding: 2rem !important;
+}
+
+@media (max-width: 768px) {
+  .page-container,
+  [class*="container"]:not(.card-content):not(.card-header):not(.card-footer) {
+    padding: 1rem !important;
+  }
+}
+
+/* Page Title Styles */
+.page-title {
+  font-size: 2.75rem;
+  font-weight: 800;
+  background: var(--gradient-primary-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.page-subtitle {
+  font-size: 1.125rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+/* Card Base Styles - Consistent padding and text visibility */
+.modern-card {
+  background: white;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem;
+  color: #1e293b; /* Dark text for white background */
+}
+
+.modern-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+}
+
+.modern-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* Ensure all text inside modern cards is visible */
+.modern-card * {
+  color: inherit;
+}
+
+.modern-card h1, .modern-card h2, .modern-card h3, 
+.modern-card h4, .modern-card h5, .modern-card h6 {
+  color: #1e293b; /* Dark text for headings */
+}
+
+.modern-card p {
+  color: #475569; /* Medium dark for paragraphs */
+}
+
+.modern-card label {
+  color: #1e293b; /* Dark text for labels */
+}
+
+.modern-card span {
+  color: #475569; /* Medium dark for spans */
+}
+
+/* Button Base Styles */
+.modern-button {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  padding: 0.875rem 1.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-cubic);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  position: relative;
+  overflow: hidden;
+  font-family: var(--font-family);
+}
+
+.modern-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.modern-button:hover::before {
+  left: 100%;
+}
+
+.modern-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.5);
+}
+
+.modern-button:disabled {
+  background: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.modern-button:disabled::before {
+  display: none;
+}
+
+/* Input Base Styles */
+.modern-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-md);
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  color: var(--color-text-primary);
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  font-family: var(--font-family);
+}
+
+.modern-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.modern-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Stat Card Styles - Consistent padding and text visibility */
+.stat-card {
+  background: white;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  text-align: center;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+  color: #1e293b; /* Dark text for white background */
+  outline: none !important;
+}
+
+.stat-card:focus,
+.stat-card:focus-visible,
+.stat-card:active {
+  outline: none !important;
+  border: 1px solid rgba(102, 126, 234, 0.1) !important;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* Ensure stat card text is visible */
+.stat-card * {
+  color: inherit;
+}
+
+.stat-value {
+  font-size: 3rem;
+  font-weight: 800;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 0.75rem;
+}
+
+.stat-label {
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Utility Classes */
+.text-gradient {
+  background: var(--gradient-primary-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-gradient {
+  background: var(--gradient-background);
+}
+
+.shadow-modern {
+  box-shadow: var(--shadow-lg);
+}
+
+.shadow-modern-hover:hover {
+  box-shadow: var(--shadow-xl);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1rem;
+  }
+  
+  .page-title {
+    font-size: 2rem;
+  }
+  
+  .page-subtitle {
+    font-size: 1rem;
+  }
+  
+  .modern-card {
+    border-radius: var(--radius-lg);
+  }
+  
+  .stat-card {
+    padding: 1.5rem;
+  }
+  
+  .stat-value {
+    font-size: 2.5rem;
+  }
+}
+

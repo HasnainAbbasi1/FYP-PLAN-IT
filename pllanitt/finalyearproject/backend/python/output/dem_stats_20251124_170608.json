@@ -1,0 +1,118 @@
+{
+  "mean_elevation": 59.30270996272203,
+  "max_elevation": 254.0,
+  "min_elevation": -4.0,
+  "std_elevation": 68.29047872619067,
+  "data_types_processed": [
+    "dem"
+  ],
+  "target_crs": "EPSG:4326",
+  "preprocessing_applied": {},
+  "slope_analysis": {
+    "mean_slope": 35.987382247538264,
+    "max_slope": 87.92052313959918,
+    "min_slope": 0.0,
+    "std_slope": 37.005785389846174,
+    "category_stats": {}
+  },
+  "flood_analysis": {
+    "flood_stats": {
+      "high_risk_area": 161368,
+      "medium_risk_area": 1118,
+      "low_risk_area": 165858
+    }
+  },
+  "erosion_analysis": {
+    "erosion_stats": {
+      "mean_soil_loss": 17.993691123769132,
+      "high_erosion_area": 159708
+    }
+  },
+  "water_availability": {},
+  "zoning_analysis": {
+    "zoning_stats": {
+      "1": {
+        "name": "Water Body",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "2": {
+        "name": "Suitable for Development",
+        "area_percentage": 49.26,
+        "pixel_count": 161745
+      },
+      "3": {
+        "name": "Limited Development",
+        "area_percentage": 1.11,
+        "pixel_count": 3642
+      },
+      "4": {
+        "name": "Conservation Area",
+        "area_percentage": 3.73,
+        "pixel_count": 12257
+      },
+      "5": {
+        "name": "High-Risk (Avoid)",
+        "area_percentage": 44.91,
+        "pixel_count": 147451
+      }
+    }
+  },
+  "validation": {
+    "geojson_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Valid Polygon geometry",
+        "Polygon area: 0.054719 square degrees"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    },
+    "dem_file_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Raster dimensions: 2057 x 693",
+        "Band count: 1",
+        "Data type: int16",
+        "CRS: EPSG:4326",
+        "CRS is defined: EPSG:4326",
+        "Bounds: BoundingBox(left=-9.184583333310712, bottom=37.12902777777475, right=-8.613194444421747, top=37.321527777774776)",
+        "NoData percentage: 32.3%",
+        "Elevation range: -6.00 to 795.00m"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 8
+      }
+    },
+    "processing_validation": {
+      "is_valid": 0,
+      "errors": [
+        "High percentage of missing data: 77.0%"
+      ],
+      "warnings": [],
+      "info": [
+        "Elevation statistics - Mean: 59.30m, Std: 68.29m",
+        "Elevation range: -4.00m to 254.00m"
+      ],
+      "summary": {
+        "error_count": 1,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    }
+  },
+  "processing_timestamp": "2025-11-24T17:06:16.083252",
+  "total_pixels": 328344,
+  "water_pixels": 0,
+  "land_pixels": 328344,
+  "analysis_type": "basic"
+}

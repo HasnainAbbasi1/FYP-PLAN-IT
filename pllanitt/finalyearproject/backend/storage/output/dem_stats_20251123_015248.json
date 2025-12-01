@@ -1,0 +1,148 @@
+{
+  "mean_elevation": 251.19372693726936,
+  "max_elevation": 257.0,
+  "min_elevation": 243.0,
+  "std_elevation": 2.088740979026903,
+  "data_types_processed": [
+    "dem"
+  ],
+  "target_crs": "EPSG:4326",
+  "preprocessing_applied": {},
+  "slope_analysis": {
+    "mean_slope": 50.81950648401384,
+    "max_slope": 77.76044170222345,
+    "min_slope": 0.0,
+    "std_slope": 15.933421396833326,
+    "category_stats": {
+      "1": {
+        "name": "Flat (0-15\u00b0)",
+        "area_percentage": 0,
+        "pixel_count": 0
+      },
+      "2": {
+        "name": "Moderate (15-30\u00b0)",
+        "area_percentage": 2.21,
+        "pixel_count": 12
+      },
+      "3": {
+        "name": "Steep (30-50\u00b0)",
+        "area_percentage": 9.96,
+        "pixel_count": 54
+      },
+      "4": {
+        "name": "Very Steep (30-50\u00b0)",
+        "area_percentage": 27.49,
+        "pixel_count": 149
+      },
+      "5": {
+        "name": "Extremely Steep (>50\u00b0)",
+        "area_percentage": 47.23,
+        "pixel_count": 256
+      }
+    }
+  },
+  "flood_analysis": {
+    "flood_stats": {
+      "high_risk_area": 0,
+      "medium_risk_area": 0,
+      "low_risk_area": 542,
+      "total_risk_area": 0
+    }
+  },
+  "erosion_analysis": {
+    "erosion_stats": {
+      "mean_soil_loss": 25.40975324200692,
+      "high_erosion_area": 405,
+      "recommendations": [
+        "Implement terracing on slopes >30\u00b0",
+        "Use erosion control blankets on steep areas",
+        "Plant vegetation to stabilize soil"
+      ]
+    }
+  },
+  "zoning_analysis": {
+    "zoning_stats": {
+      "1": {
+        "name": "Water Body",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "2": {
+        "name": "Suitable for Development",
+        "area_percentage": 2.21,
+        "pixel_count": 12
+      },
+      "3": {
+        "name": "Limited Development",
+        "area_percentage": 9.96,
+        "pixel_count": 54
+      },
+      "4": {
+        "name": "Conservation Area",
+        "area_percentage": 27.49,
+        "pixel_count": 149
+      },
+      "5": {
+        "name": "High-Risk (Avoid)",
+        "area_percentage": 47.23,
+        "pixel_count": 256
+      }
+    }
+  },
+  "validation": {
+    "geojson_validation": {
+      "is_valid": true,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Valid Polygon geometry",
+        "Polygon area: 0.000042 square degrees"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    },
+    "dem_file_validation": {
+      "is_valid": true,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Raster dimensions: 32 x 23",
+        "Band count: 1",
+        "Data type: int16",
+        "CRS: EPSG:4326",
+        "CRS is defined: EPSG:4326",
+        "Bounds: BoundingBox(left=70.93375000003323, bottom=32.630972222218595, right=70.94263888892212, top=32.63736111110749)",
+        "NoData percentage: 0.0%",
+        "Elevation range: 243.00 to 257.00m"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 8
+      }
+    },
+    "processing_validation": {
+      "is_valid": false,
+      "errors": [
+        "High percentage of missing data: 26.4%"
+      ],
+      "warnings": [],
+      "info": [
+        "Elevation statistics - Mean: 251.19m, Std: 2.09m",
+        "Elevation range: 243.00m to 257.00m"
+      ],
+      "summary": {
+        "error_count": 1,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    }
+  },
+  "processing_timestamp": "2025-11-23T01:52:51.265220",
+  "total_pixels": 542,
+  "water_pixels": 0,
+  "land_pixels": 542
+}

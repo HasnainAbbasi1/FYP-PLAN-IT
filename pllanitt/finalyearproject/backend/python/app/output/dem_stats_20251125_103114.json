@@ -1,0 +1,397 @@
+{
+  "mean_elevation": 116.30267008046818,
+  "max_elevation": 129.0,
+  "min_elevation": 95.0,
+  "std_elevation": 2.1789913061035437,
+  "data_types_processed": [
+    "dem"
+  ],
+  "target_crs": "EPSG:4326",
+  "preprocessing_applied": {},
+  "slope_analysis": {
+    "mean_slope": 47.67411176959386,
+    "max_slope": 89.99816414836637,
+    "min_slope": 4.1688166320878607e-10,
+    "std_slope": 44.90698825185174,
+    "slope_distribution": {
+      "nearly_level": {
+        "pixel_count": 4975,
+        "area_percentage": 47.01379701379702,
+        "min_slope": 0,
+        "max_slope": 3
+      },
+      "gently_sloping": {
+        "pixel_count": 0,
+        "area_percentage": 0.0,
+        "min_slope": 3,
+        "max_slope": 8
+      },
+      "moderately_sloping": {
+        "pixel_count": 0,
+        "area_percentage": 0.0,
+        "min_slope": 8,
+        "max_slope": 15
+      },
+      "strongly_sloping": {
+        "pixel_count": 0,
+        "area_percentage": 0.0,
+        "min_slope": 15,
+        "max_slope": 25
+      },
+      "moderately_steep": {
+        "pixel_count": 0,
+        "area_percentage": 0.0,
+        "min_slope": 25,
+        "max_slope": 35
+      },
+      "steep": {
+        "pixel_count": 0,
+        "area_percentage": 0.0,
+        "min_slope": 35,
+        "max_slope": 50
+      },
+      "very_steep": {
+        "pixel_count": 5607,
+        "area_percentage": 52.98620298620299,
+        "min_slope": 50,
+        "max_slope": 90
+      }
+    },
+    "category_stats": {
+      "1": {
+        "name": "Flat (0-15\u00b0)",
+        "area_percentage": 47.01,
+        "pixel_count": 4975
+      },
+      "2": {
+        "name": "Moderate (15-30\u00b0)",
+        "area_percentage": 5.65,
+        "pixel_count": 309
+      },
+      "3": {
+        "name": "Steep (30-50\u00b0)",
+        "area_percentage": 17.19,
+        "pixel_count": 940
+      },
+      "4": {
+        "name": "Very Steep (50-70\u00b0)",
+        "area_percentage": 37.71,
+        "pixel_count": 2062
+      },
+      "5": {
+        "name": "Extremely Steep (>70\u00b0)",
+        "area_percentage": 35.2,
+        "pixel_count": 1925
+      }
+    },
+    "python_slope_categories": {
+      "nearly_level_0_3": {
+        "count": 309,
+        "percentage": 2.8
+      },
+      "gently_sloping_3_8": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "moderately_sloping_8_15": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "strongly_sloping_15_25": {
+        "count": 0,
+        "percentage": 0.0
+      },
+      "steep_25_plus": {
+        "count": 4927,
+        "percentage": 44.71
+      }
+    }
+  },
+  "flood_analysis": {
+    "flood_risk_map": null,
+    "risk_statistics": {
+      "high_risk_area_percent": 0.0,
+      "medium_risk_area_percent": 7.277676950998186,
+      "low_risk_area_percent": 92.72232304900182,
+      "high_risk_area_pixels": 0,
+      "medium_risk_area_pixels": 802,
+      "low_risk_area_pixels": 10218,
+      "mean_risk_score": 1.2461343012704174,
+      "max_risk_score": 2.0
+    },
+    "risk_factors": {
+      "elevation_risk": {
+        "mean": 1.0265880217785843,
+        "high_risk_pixels": 802
+      },
+      "flow_accumulation_risk": {
+        "mean": 1.0,
+        "high_risk_pixels": 0
+      },
+      "drainage_proximity_risk": {
+        "mean": 2.1774954627949183,
+        "high_risk_pixels": 11020
+      }
+    },
+    "recommendations": [
+      "\u2705 LOW FLOOD RISK: Most areas are safe from flooding.",
+      "Monitor drainage channels and maintain clear water flow paths.",
+      "Consider elevation requirements for new construction."
+    ]
+  },
+  "erosion_analysis": {
+    "annual_soil_loss": {
+      "mean": 1.8000000000000005,
+      "max": 1.7999999999999998,
+      "min": 1.7999999999999998,
+      "std": 6.661338147750939e-16,
+      "median": 1.7999999999999998
+    },
+    "erosion_risk_categories": {
+      "high_erosion_percent": 0.0,
+      "medium_erosion_percent": 0.0,
+      "low_erosion_percent": 100.0
+    },
+    "usle_factors": {
+      "R_factor": 200,
+      "K_factor": 0.3,
+      "LS_factor_mean": 0.1,
+      "C_factor": 0.3,
+      "P_factor": 1.0
+    },
+    "recommendations": [
+      "\u2705 LOW EROSION RISK: Soil loss is within acceptable limits.",
+      "\u26a0\ufe0f 53.0% of area has slopes >30\u00b0 - requires special attention.",
+      "Consider slope stabilization measures.",
+      "Maintain vegetative cover to reduce erosion.",
+      "Implement proper drainage to prevent water-induced erosion."
+    ]
+  },
+  "water_availability": {
+    "topographic_wetness_index": {
+      "mean": 0.0,
+      "max": 0.0,
+      "min": 0.0,
+      "std": 0.0
+    },
+    "distance_to_water": {
+      "mean_meters": 0.024141878120995535,
+      "min_meters": 0.0002777777777778146,
+      "max_meters": 0.04522918319344515
+    },
+    "water_availability_score": {
+      "mean": 0.29999275743656373,
+      "max": 0.29999991666666664,
+      "min": 0.29998643124504193,
+      "classification": "Very Low - Poor water availability"
+    },
+    "flow_accumulation_stats": {
+      "mean": 1.0,
+      "max": 1.0
+    }
+  },
+  "zoning_analysis": {
+    "zoning_stats": {
+      "1": {
+        "name": "Water Body",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "2": {
+        "name": "Suitable for Development",
+        "area_percentage": 5.65,
+        "pixel_count": 309
+      },
+      "3": {
+        "name": "Limited Development",
+        "area_percentage": 17.19,
+        "pixel_count": 940
+      },
+      "4": {
+        "name": "Conservation Area",
+        "area_percentage": 37.71,
+        "pixel_count": 2062
+      },
+      "5": {
+        "name": "High-Risk (Avoid)",
+        "area_percentage": 35.2,
+        "pixel_count": 1925
+      }
+    }
+  },
+  "validation": {
+    "geojson_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Valid Polygon geometry",
+        "Polygon area: 0.000421 square degrees"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    },
+    "dem_file_validation": {
+      "is_valid": 1,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Raster dimensions: 145 x 76",
+        "Band count: 1",
+        "Data type: int16",
+        "CRS: EPSG:4326",
+        "CRS is defined: EPSG:4326",
+        "Bounds: BoundingBox(left=70.74958333336656, bottom=29.971249999996022, right=70.78986111114435, top=29.992361111107137)",
+        "NoData percentage: 0.0%",
+        "Elevation range: 95.00 to 129.00m"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 8
+      }
+    },
+    "processing_validation": {
+      "is_valid": 0,
+      "errors": [
+        "High percentage of missing data: 50.4%"
+      ],
+      "warnings": [],
+      "info": [
+        "Elevation statistics - Mean: 116.30m, Std: 2.18m",
+        "Elevation range: 95.00m to 129.00m"
+      ],
+      "summary": {
+        "error_count": 1,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    }
+  },
+  "processing_timestamp": "2025-11-25T10:31:29.258255",
+  "total_pixels": 5468,
+  "water_pixels": 0,
+  "land_pixels": 5468,
+  "analysis_type": "advanced",
+  "hydrology_summary": {
+    "bounding_box": {
+      "west": 70.749814,
+      "south": 29.971305,
+      "east": 70.78999,
+      "north": 29.992335
+    },
+    "area_deg2": 0.0008,
+    "total_features": 4,
+    "waterway_count": 4,
+    "water_body_count": 0,
+    "named_features": 1,
+    "estimated_waterway_length_km": 169.87,
+    "sample_names": [
+      "\u062f\u0631\u06cc\u0627\u0626\u06d2 \u0633\u0646\u062f\u06be"
+    ]
+  },
+  "python_terrain_stats": {
+    "elevation": {
+      "mean": 116.30267008046818,
+      "std": 2.178991306103544,
+      "min": 95.0,
+      "max": 129.0,
+      "range": 34.0,
+      "median": 116.0,
+      "percentiles": {
+        "p25": 115.0,
+        "p50": 116.0,
+        "p75": 117.0
+      }
+    },
+    "slope": {
+      "mean": null,
+      "std": null,
+      "min": null,
+      "max": null,
+      "median": null,
+      "percentiles": {
+        "p25": null,
+        "p50": null,
+        "p75": null
+      },
+      "categories": {
+        "nearly_level_0_3": {
+          "count": 309,
+          "percentage": 2.8
+        },
+        "gently_sloping_3_8": {
+          "count": 0,
+          "percentage": 0.0
+        },
+        "moderately_sloping_8_15": {
+          "count": 0,
+          "percentage": 0.0
+        },
+        "strongly_sloping_15_25": {
+          "count": 0,
+          "percentage": 0.0
+        },
+        "steep_25_plus": {
+          "count": 4927,
+          "percentage": 44.71
+        }
+      }
+    },
+    "aspect": {
+      "mean": null,
+      "std": null,
+      "min": null,
+      "max": null,
+      "median": null,
+      "directions": {
+        "north": {
+          "count": 1400,
+          "percentage": 12.7
+        },
+        "east": {
+          "count": 1069,
+          "percentage": 9.7
+        },
+        "south": {
+          "count": 1450,
+          "percentage": 13.16
+        },
+        "west": {
+          "count": 1102,
+          "percentage": 10.0
+        }
+      }
+    },
+    "flow_accumulation": {
+      "error": "Flow accumulation file not provided or not found"
+    },
+    "metadata": {
+      "dem_path": "output/dem_clip_20251125_103114.tif",
+      "slope_path": "temp_terrain/slope_20251125_103114.tif",
+      "aspect_path": "temp_terrain/aspect_20251125_103114.tif",
+      "flow_acc_path": null,
+      "raster_dimensions": {
+        "width": 145,
+        "height": 76
+      },
+      "crs": "EPSG:4326"
+    }
+  },
+  "elevation_stats": {
+    "mean": 116.30267008046818,
+    "std": 2.178991306103544,
+    "min": 95.0,
+    "max": 129.0,
+    "range": 34.0,
+    "median": 116.0,
+    "percentiles": {
+      "p25": 115.0,
+      "p50": 116.0,
+      "p75": 117.0
+    }
+  }
+}

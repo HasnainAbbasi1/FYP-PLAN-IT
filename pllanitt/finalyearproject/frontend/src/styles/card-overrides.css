@@ -1,0 +1,180 @@
+/* ========================================
+   CARD TEXT VISIBILITY FIXES
+   Ensures all text is visible on white backgrounds
+   ======================================== */
+
+/* ========================================
+   FORCE WHITE BACKGROUND IN LIGHT MODE
+   Override all CSS variables and other rules
+   ======================================== */
+
+/* ALWAYS force white background by default - override everything */
+[data-card-component="true"] {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+/* Only apply dark background when dark mode is explicitly active on html/body */
+html.dark [data-card-component="true"],
+html.dark body [data-card-component="true"],
+body.dark [data-card-component="true"],
+.dark [data-card-component="true"],
+html[class*="dark"] [data-card-component="true"] {
+  background-color: rgb(30 41 59) !important;
+  background: rgb(30 41 59) !important;
+}
+
+/* Explicitly override in light mode (when html doesn't have dark class) */
+html:not(.dark) [data-card-component="true"],
+html:not([class*="dark"]) [data-card-component="true"],
+body:not(.dark) [data-card-component="true"] {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+/* Override text colors to use theme variables */
+[class*="card"],
+[class*="Card"],
+.modern-card,
+.stat-card,
+.admin-stat-card,
+.terrain-card,
+.zoning-selection-card,
+.primary-recommendation-card,
+.zone-breakdown-card,
+.terrain-summary-card,
+.suitability-card,
+.parcels-sidebar-card,
+.parcels-main-card,
+.optimization-zoning-card,
+.projects-card,
+.buildings-card,
+.roads-card,
+.infrastructure-card,
+.greenspaces-card {
+  color: var(--card-foreground) !important;
+}
+
+/* Headings in cards */
+[class*="card"] h1,
+[class*="card"] h2,
+[class*="card"] h3,
+[class*="card"] h4,
+[class*="card"] h5,
+[class*="card"] h6,
+[class*="Card"] h1,
+[class*="Card"] h2,
+[class*="Card"] h3,
+[class*="Card"] h4,
+[class*="Card"] h5,
+[class*="Card"] h6,
+.modern-card h1,
+.modern-card h2,
+.modern-card h3,
+.modern-card h4,
+.modern-card h5,
+.modern-card h6,
+.stat-card h1,
+.stat-card h2,
+.stat-card h3,
+.stat-card h4,
+.stat-card h5,
+.stat-card h6 {
+  color: var(--card-foreground) !important;
+}
+
+/* Paragraphs in cards */
+[class*="card"] p,
+[class*="Card"] p,
+.modern-card p,
+.stat-card p {
+  color: var(--muted-foreground) !important;
+}
+
+/* Labels in cards */
+[class*="card"] label,
+[class*="Card"] label,
+.modern-card label,
+.stat-card label {
+  color: var(--card-foreground) !important;
+}
+
+/* Spans in cards */
+[class*="card"] span,
+[class*="Card"] span,
+.modern-card span,
+.stat-card span {
+  color: var(--muted-foreground) !important;
+}
+
+/* Ensure consistent padding for all cards */
+[class*="card"]:not(.card-header):not(.card-content):not(.card-footer):not(
+    .card-title
+  ):not(.card-description),
+[class*="Card"]:not(.card-header):not(.card-content):not(.card-footer):not(
+    .card-title
+  ):not(.card-description),
+.modern-card,
+.stat-card,
+.admin-stat-card,
+.terrain-card,
+.zoning-selection-card,
+.primary-recommendation-card,
+.zone-breakdown-card,
+.terrain-summary-card,
+.suitability-card,
+.parcels-sidebar-card,
+.parcels-main-card,
+.optimization-zoning-card {
+  padding: 1.5rem !important;
+  min-height: auto;
+}
+
+/* Card headers */
+[class*="card-header"],
+[class*="Card-header"],
+.card-header {
+  padding: 1.5rem 1.5rem 1rem 1.5rem !important;
+}
+
+/* Card content */
+[class*="card-content"],
+[class*="Card-content"],
+.card-content {
+  padding: 1.5rem !important;
+}
+
+/* Card footer */
+[class*="card-footer"],
+[class*="Card-footer"],
+.card-footer {
+  padding: 1.5rem !important;
+}
+
+/* Remove all outlines from cards */
+[class*="card"]:not(.card-header):not(.card-content):not(.card-footer):not(
+    .card-title
+  ):not(.card-description),
+[class*="Card"]:not(.card-header):not(.card-content):not(.card-footer):not(
+    .card-title
+  ):not(.card-description),
+.modern-card,
+.stat-card,
+.admin-stat-card {
+  outline: none !important;
+}
+
+[class*="card"]:focus,
+[class*="card"]:focus-visible,
+[class*="card"]:active,
+[class*="Card"]:focus,
+[class*="Card"]:focus-visible,
+[class*="Card"]:active,
+.modern-card:focus,
+.modern-card:focus-visible,
+.modern-card:active,
+.stat-card:focus,
+.stat-card:focus-visible,
+.stat-card:active {
+  outline: none !important;
+}

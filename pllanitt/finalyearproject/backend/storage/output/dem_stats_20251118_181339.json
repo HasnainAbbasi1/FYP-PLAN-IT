@@ -1,0 +1,148 @@
+{
+  "mean_elevation": 1326.8499992830411,
+  "max_elevation": 1933.0,
+  "min_elevation": 648.0,
+  "std_elevation": 214.68665418575608,
+  "data_types_processed": [
+    "dem"
+  ],
+  "target_crs": "EPSG:4326",
+  "preprocessing_applied": {},
+  "slope_analysis": {
+    "mean_slope": 74.23230462386121,
+    "max_slope": 89.7159313784091,
+    "min_slope": 0.0,
+    "std_slope": 14.850754950520496,
+    "category_stats": {
+      "1": {
+        "name": "Flat (0-15\u00b0)",
+        "area_percentage": 0,
+        "pixel_count": 0
+      },
+      "2": {
+        "name": "Moderate (15-30\u00b0)",
+        "area_percentage": 0.53,
+        "pixel_count": 3714
+      },
+      "3": {
+        "name": "Steep (30-50\u00b0)",
+        "area_percentage": 2.03,
+        "pixel_count": 14177
+      },
+      "4": {
+        "name": "Very Steep (30-50\u00b0)",
+        "area_percentage": 6.77,
+        "pixel_count": 47223
+      },
+      "5": {
+        "name": "Extremely Steep (>50\u00b0)",
+        "area_percentage": 90.13,
+        "pixel_count": 628530
+      }
+    }
+  },
+  "flood_analysis": {
+    "flood_stats": {
+      "high_risk_area": 0,
+      "medium_risk_area": 0,
+      "low_risk_area": 697390,
+      "total_risk_area": 0
+    }
+  },
+  "erosion_analysis": {
+    "erosion_stats": {
+      "mean_soil_loss": 37.116152311930605,
+      "high_erosion_area": 675753,
+      "recommendations": [
+        "Implement terracing on slopes >30\u00b0",
+        "Use erosion control blankets on steep areas",
+        "Plant vegetation to stabilize soil"
+      ]
+    }
+  },
+  "zoning_analysis": {
+    "zoning_stats": {
+      "1": {
+        "name": "Water Body",
+        "area_percentage": 0.0,
+        "pixel_count": 0
+      },
+      "2": {
+        "name": "Suitable for Development",
+        "area_percentage": 0.53,
+        "pixel_count": 3714
+      },
+      "3": {
+        "name": "Limited Development",
+        "area_percentage": 2.03,
+        "pixel_count": 14177
+      },
+      "4": {
+        "name": "Conservation Area",
+        "area_percentage": 6.77,
+        "pixel_count": 47223
+      },
+      "5": {
+        "name": "High-Risk (Avoid)",
+        "area_percentage": 90.13,
+        "pixel_count": 628530
+      }
+    }
+  },
+  "validation": {
+    "geojson_validation": {
+      "is_valid": true,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Valid Polygon geometry",
+        "Polygon area: 0.053815 square degrees"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    },
+    "dem_file_validation": {
+      "is_valid": true,
+      "errors": [],
+      "warnings": [],
+      "info": [
+        "Raster dimensions: 1551 x 822",
+        "Band count: 1",
+        "Data type: int16",
+        "CRS: GEOGCS[\"WGS 84\",DATUM[\"World Geodetic System 1984\",SPHEROID[\"WGS 84\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST]]",
+        "CRS is defined: GEOGCS[\"WGS 84\",DATUM[\"World Geodetic System 1984\",SPHEROID[\"WGS 84\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST]]",
+        "Bounds: BoundingBox(left=69.69819444447754, bottom=29.839861111107115, right=70.12902777781093, top=30.06819444444048)",
+        "NoData percentage: 0.0%",
+        "Elevation range: 415.00 to 2022.00m"
+      ],
+      "summary": {
+        "error_count": 0,
+        "warning_count": 0,
+        "info_count": 8
+      }
+    },
+    "processing_validation": {
+      "is_valid": false,
+      "errors": [
+        "High percentage of missing data: 45.3%"
+      ],
+      "warnings": [],
+      "info": [
+        "Elevation statistics - Mean: 1326.85m, Std: 214.69m",
+        "Elevation range: 648.00m to 1933.00m"
+      ],
+      "summary": {
+        "error_count": 1,
+        "warning_count": 0,
+        "info_count": 2
+      }
+    }
+  },
+  "processing_timestamp": "2025-11-18T18:13:47.099539",
+  "total_pixels": 697390,
+  "water_pixels": 0,
+  "land_pixels": 697390
+}
