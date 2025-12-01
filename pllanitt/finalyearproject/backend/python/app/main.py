@@ -210,18 +210,28 @@ DOWNLOAD_DIRECTORIES = [
     PYTHON_ROOT / "storage" / "uploads",
 ]
 
-# Try to load the model, but don't fail if it doesn't exist
+# Legacy model variable for old /api/land_suitability endpoint
+# Note: The enhanced endpoint (/api/land_suitability_enhanced) loads its own model instance
+model = None
+# Try to load the model silently (endpoints will load their own if needed)
 try:
-    model_path = Path(__file__).parent / "ml_models" / "land_suitability.pkl"
-    if model_path.exists():
-        model = joblib.load(model_path)
-        print(f"Loaded model from {model_path}")
-    else:
-        model = None
-        print(f"Model not found at {model_path}, using fallback methods")
-except Exception as e:
-    model = None
-    print(f"Failed to load model: {e}, using fallback methods")
+    possible_paths = [
+        Path(__file__).parent / "ml_models" / "land_suitability.pkl",
+        Path(__file__).parent.parent / "engines" / "ml_models" / "land_suitability.pkl",
+        Path(__file__).parent.parent.parent / "storage" / "models" / "land_suitability.pkl",
+        Path(__file__).parent.parent / "storage" / "models" / "land_suitability.pkl",
+    ]
+    
+    for model_path in possible_paths:
+        if model_path.exists():
+            try:
+                model = joblib.load(model_path)
+                logger.debug(f"Pre-loaded legacy model from {model_path}")
+                break
+            except Exception:
+                continue
+except Exception:
+    pass  # Silently fail - endpoints handle their own model loading
 
 
 def reproject_array_to_match(src_array, src_transform, src_crs, target_meta):
@@ -3803,23 +3813,42 @@ async def land_suitability_enhanced(request: Request):
         logger.info(f"📊 REAL Terrain Features Extracted: Elevation={features['elevation']:.1f}m, Slope={features['slope']:.1f}°, TWI={features['twi']:.2f}, Flood Risk={features['flood_risk']:.2f}, Erosion Risk={features['erosion_risk']:.2f}")
         
         # Load the ML model
-        model_path = Path(__file__).parent / "ml_models" / "land_suitability.pkl"
+        model_path = None
         model = None
         
+        # Check multiple possible model locations
+        possible_paths = [
+            Path(__file__).parent / "ml_models" / "land_suitability.pkl",
+            Path(__file__).parent.parent / "engines" / "ml_models" / "land_suitability.pkl",
+            Path(__file__).parent.parent.parent / "storage" / "models" / "land_suitability.pkl",
+            Path(__file__).parent.parent / "storage" / "models" / "land_suitability.pkl",
+        ]
+        
+        for path in possible_paths:
+            if path.exists():
+                model_path = path
+                break
+        
         try:
-            if model_path.exists():
-                from land_suitability_model import LandSuitabilityModel
+            if model_path and model_path.exists():
+                from engines.land_suitability_model import LandSuitabilityModel
                 suitability_model = LandSuitabilityModel()
                 suitability_model.load_model(str(model_path))
                 model = suitability_model
-                logger.info("Loaded trained land suitability model")
+                logger.info(f"✅ Loaded trained land suitability model from {model_path}")
             else:
-                logger.warning("No trained model found, creating and training new model")
-                from land_suitability_model import create_and_train_model
+                # Create and train a new model if none exists
+                logger.info("Creating and training new land suitability model...")
+                from engines.land_suitability_model import create_and_train_model
                 model, training_results = create_and_train_model()
-                logger.info("Created and trained new land suitability model")
+                logger.info(f"✅ Created and trained new land suitability model (accuracy: {training_results['test_score']:.3f})")
+        except ImportError as e:
+            logger.error(f"Failed to import land suitability model: {e}")
+            model = None
         except Exception as e:
-            logger.warning(f"Failed to load/create model: {e}, using heuristic method")
+            logger.error(f"Failed to load/create model: {e}")
+            import traceback
+            traceback.print_exc()
             model = None
         
         # Make predictions
@@ -3845,27 +3874,46 @@ async def land_suitability_enhanced(request: Request):
                 confidence = prediction_result['confidence']
                 probabilities = prediction_result['probabilities']
                 
-                logger.info(f"ML Model prediction: Class {suitability_class}, Confidence: {confidence:.3f}")
+                logger.info(f"✅ ML Model prediction: Class {suitability_class}, Confidence: {confidence:.3f}")
             except Exception as e:
-                logger.warning(f"ML model prediction failed: {e}, using heuristic method")
+                logger.error(f"ML model prediction failed: {e}")
+                import traceback
+                traceback.print_exc()
                 model = None
         
-        # Fallback heuristic method
+        # Fallback heuristic method using REAL terrain data
         if not model:
-            # Calculate suitability score based on terrain characteristics
-            elevation_score = 1.0 - abs(features['elevation'] - 500) / 1000.0  # Optimal around 500m
+            # Calculate suitability score based on REAL terrain characteristics
+            # Elevation: Optimal range 200-800m (penalize extremes)
+            elevation_optimal = 500
+            elevation_range = 600
+            elevation_score = 1.0 - abs(features['elevation'] - elevation_optimal) / elevation_range
             elevation_score = max(0, min(1, elevation_score))
             
-            slope_score = 1.0 - features['slope'] / 45.0  # Lower slope is better
+            # Slope: Lower is better (0-15° ideal, >45° very poor)
+            slope_score = 1.0 - min(1.0, features['slope'] / 45.0)
             slope_score = max(0, min(1, slope_score))
             
-            soil_score = features['soil_quality']
+            # Soil quality: Use real value if available
+            soil_score = features.get('soil_quality', 0.7)
             
-            distance_score = 1.0 - features['distance_to_roads'] / 2000.0  # Closer to roads is better
+            # Distance to roads: Closer is better (0-500m ideal, >2000m poor)
+            distance_to_roads = features.get('distance_to_roads', 500)
+            distance_score = 1.0 - min(1.0, distance_to_roads / 2000.0)
             distance_score = max(0, min(1, distance_score))
             
-            # Water availability score (from terrain analysis if available)
-            water_score = 0.5  # Default if not available
+            # Flood risk: Lower is better (use real flood risk from terrain analysis)
+            flood_risk_val = features.get('flood_risk', 0.5)
+            flood_score = 1.0 - flood_risk_val
+            flood_score = max(0, min(1, flood_score))
+            
+            # Erosion risk: Lower is better (use real erosion risk from terrain analysis)
+            erosion_risk_val = features.get('erosion_risk', 0.5)
+            erosion_score = 1.0 - erosion_risk_val
+            erosion_score = max(0, min(1, erosion_score))
+            
+            # Water availability: Use REAL water score from terrain analysis
+            water_score = features.get('water_availability_score', 0.5)
             if terrain_data and terrain_data.get('stats', {}).get('water_availability'):
                 water_avail = terrain_data['stats']['water_availability']
                 if water_avail.get('water_availability_score', {}).get('mean') is not None:
@@ -3875,14 +3923,18 @@ async def land_suitability_enhanced(request: Request):
                     twi_mean = water_avail['topographic_wetness_index']['mean']
                     water_score = min(1.0, max(0.0, twi_mean / 15.0))  # Normalize TWI (typical range 0-15)
             
-            # Weighted combination (including water availability)
-            total_score = (elevation_score * 0.25 + 
-                          slope_score * 0.35 + 
-                          soil_score * 0.15 + 
-                          water_score * 0.15 +  # Water availability factor
-                          distance_score * 0.10)
+            # Weighted combination using REAL terrain factors
+            total_score = (
+                elevation_score * 0.20 +      # Elevation importance
+                slope_score * 0.25 +          # Slope (most critical)
+                soil_score * 0.15 +           # Soil quality
+                water_score * 0.15 +         # Water availability
+                flood_score * 0.10 +         # Flood safety
+                erosion_score * 0.10 +       # Erosion control
+                distance_score * 0.05        # Road access
+            )
             
-            # Convert to class
+            # Convert to class based on score
             if total_score >= 0.7:
                 suitability_class = 2  # High
                 confidence = total_score
@@ -3893,13 +3945,28 @@ async def land_suitability_enhanced(request: Request):
                 suitability_class = 0  # Low
                 confidence = 1 - total_score
             
-            probabilities = {
-                'low': 1 - total_score if total_score < 0.5 else 0.2,
-                'medium': 0.3 if 0.3 <= total_score <= 0.7 else 0.1,
-                'high': total_score if total_score > 0.5 else 0.1
-            }
+            # Calculate realistic probabilities
+            if total_score >= 0.7:
+                probabilities = {
+                    'low': 0.1,
+                    'medium': 0.2,
+                    'high': 0.7
+                }
+            elif total_score >= 0.4:
+                probabilities = {
+                    'low': 0.3,
+                    'medium': 0.5,
+                    'high': 0.2
+                }
+            else:
+                probabilities = {
+                    'low': 0.7,
+                    'medium': 0.2,
+                    'high': 0.1
+                }
             
-            logger.info(f"Heuristic prediction: Class {suitability_class}, Score: {total_score:.3f}")
+            logger.info(f"✅ Heuristic analysis (using REAL terrain data): Class {suitability_class}, Score: {total_score:.3f}")
+            logger.info(f"   Factors: Elevation={elevation_score:.2f}, Slope={slope_score:.2f}, Water={water_score:.2f}, Flood={flood_score:.2f}, Erosion={erosion_score:.2f}")
         
         # Use Python suitability scripts for enhanced analysis if available
         python_mce_stats = None
@@ -4999,11 +5066,9 @@ async def land_suitability_enhanced(request: Request):
                     ax_factors.text(score + 2, bar.get_y() + bar.get_height()/2, 
                                    f'{score:.1f}%', va='center', fontsize=10, fontweight='bold')
                 
-                plt.tight_layout()
-                
-                # Save charts separately
+                # Save charts separately (bbox_inches='tight' handles layout, no need for tight_layout)
                 charts_path = f"output/land_suitability_charts_{timestamp}.png"
-                plt.savefig(charts_path, dpi=150, bbox_inches='tight', facecolor='white')
+                plt.savefig(charts_path, dpi=150, bbox_inches='tight', facecolor='white', pad_inches=0.2)
                 plt.close(fig_charts)
                 
                 # Get base URL from request

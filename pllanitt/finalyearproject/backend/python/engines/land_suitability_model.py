@@ -272,12 +272,27 @@ def create_and_train_model():
     # Train the model
     training_results = model.train_model()
     
-    # Save the model
-    model_dir = Path(__file__).parent / "ml_models"
-    model_dir.mkdir(exist_ok=True)
-    model_path = model_dir / "land_suitability.pkl"
+    # Save the model - try multiple locations
+    model_paths = [
+        Path(__file__).parent / "ml_models" / "land_suitability.pkl",  # engines/ml_models
+        Path(__file__).parent.parent / "app" / "ml_models" / "land_suitability.pkl",  # app/ml_models
+    ]
     
-    model.save_model(str(model_path))
+    # Use the first path that we can create
+    model_path = None
+    for path in model_paths:
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            model_path = path
+            break
+        except Exception:
+            continue
+    
+    if model_path:
+        model.save_model(str(model_path))
+        logger.info(f"Model saved to {model_path}")
+    else:
+        logger.warning("Could not save model to any location")
     
     return model, training_results
 

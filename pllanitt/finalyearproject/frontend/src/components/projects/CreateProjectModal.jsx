@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Formik, Form, Field, FieldArray } from 'formik';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ import {
   LoadingButton,
   ValidationSummary 
 } from '../../components/validation/ValidationComponents';
+import { searchLocations, reverseGeocode } from '../../services/geocodingService';
 
 const CreateProjectModal = ({ isOpen, onClose }) => {
   const { createProject, loading } = useProject();
@@ -32,6 +33,12 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [newTag, setNewTag] = useState('');
+  const searchTimeoutRef = useRef(null);
+  const searchAbortControllerRef = useRef(null);
+  const reverseGeocodeAbortControllerRef = useRef(null);
+  const mapInitRetryCountRef = useRef(0);
+  const isInitializingRef = useRef(false);
+  const MAX_MAP_INIT_RETRIES = 5;
 
   // Initial values for Formik
   const initialValues = {
@@ -45,8 +52,8 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
     tags: [],
     objectives: [''],
     teamMembers: [user?.id].filter(Boolean),
-    startDate: '',
-    endDate: '',
+    startDate: null, // Use null instead of empty string for date fields
+    endDate: null, // Use null instead of empty string for date fields
     coordinates: null,
     area: 0
   };
@@ -66,55 +73,62 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
 
   const priorities = ['Low', 'Medium', 'High', 'Critical'];
 
-  // Initialize map when modal opens and location tab is active
-  useEffect(() => {
-    if (isOpen && activeTab === 'location' && mapRef.current && !mapInstanceRef.current) {
-      // Add a delay to ensure the DOM is ready and visible
-      const timer = setTimeout(() => {
-        console.log('Attempting to initialize map...');
-        initializeMap();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, activeTab]);
-
-  // Force map resize when tab becomes active
-  useEffect(() => {
-    if (activeTab === 'location' && mapInstanceRef.current) {
-      setTimeout(() => {
-        mapInstanceRef.current.invalidateSize();
-        console.log('Map resized');
-      }, 100);
-    }
-  }, [activeTab]);
-
-  // Cleanup map when modal closes
-  useEffect(() => {
-    if (!isOpen && mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-      markerRef.current = null;
-    }
-  }, [isOpen]);
-
   // Initialize Leaflet map
-  const initializeMap = async () => {
+  const initializeMap = useCallback(async () => {
+    // Prevent concurrent initializations
+    if (isInitializingRef.current) {
+      console.log('Map initialization already in progress, skipping...');
+      return;
+    }
+
+    // Check if map is already initialized
+    if (mapInstanceRef.current) {
+      console.log('Map already initialized');
+      return;
+    }
+
+    // Check if container already has a Leaflet map instance
+    if (mapRef.current && mapRef.current._leaflet_id) {
+      console.log('Map container already has a Leaflet instance');
+      return;
+    }
+
     try {
+      isInitializingRef.current = true;
       console.log('Starting map initialization...');
       
       // Check if map container exists and is visible
       if (!mapRef.current) {
         console.log('Map container not ready');
+        isInitializingRef.current = false;
         return;
       }
 
       // Check if container has dimensions
       const rect = mapRef.current.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) {
-        console.log('Map container has no dimensions, retrying...');
-        setTimeout(() => initializeMap(), 500);
+        mapInitRetryCountRef.current += 1;
+        if (mapInitRetryCountRef.current >= MAX_MAP_INIT_RETRIES) {
+          console.error('Map initialization failed: container has no dimensions after', MAX_MAP_INIT_RETRIES, 'retries');
+          isInitializingRef.current = false;
+          if (mapRef.current) {
+            mapRef.current.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #f5f5f5; border-radius: 8px;">
+                <p style="color: #666; margin-bottom: 10px;">Failed to load map. Please try refreshing the page.</p>
+                <button onclick="window.location.reload()" style="padding: 8px 16px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer;">Reload Page</button>
+              </div>
+            `;
+          }
+          return;
+        }
+        console.log('Map container has no dimensions, retrying... (attempt', mapInitRetryCountRef.current, 'of', MAX_MAP_INIT_RETRIES, ')');
+        isInitializingRef.current = false;
+        setTimeout(() => initializeMap(), 300); // Reduced from 500ms
         return;
       }
+      
+      // Reset retry count on successful dimension check
+      mapInitRetryCountRef.current = 0;
 
       // Try to use global Leaflet first, then dynamic import
       let L;
@@ -158,26 +172,40 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
         subdomains: ['a', 'b', 'c']
       }).addTo(map);
 
-      // Add click handler for location selection - will be updated by Formik context
-      // This will be handled in the Formik render function
-
       // Store map instance
       mapInstanceRef.current = map;
+      isInitializingRef.current = false;
       
-      // Force map to resize after initialization
+      // Force map to resize after initialization (reduced delay)
       setTimeout(() => {
-        map.invalidateSize();
-        console.log('Map invalidated and resized');
-      }, 200);
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+          console.log('Map invalidated and resized');
+        }
+      }, 100); // Reduced from 200ms
 
       console.log('Map initialized successfully');
       
     } catch (error) {
+      isInitializingRef.current = false;
       console.error('Error initializing map:', error);
-      console.error('Error stack:', error.stack);
+      
+      // If error is "already initialized", try to get existing instance
+      if (error.message && error.message.includes('already initialized')) {
+        console.log('Map was already initialized, attempting to recover...');
+        if (mapRef.current && mapRef.current._leaflet_id) {
+          // Try to find the existing map instance
+          const existingMap = (window.L || {}).map?.get?.(mapRef.current._leaflet_id);
+          if (existingMap) {
+            mapInstanceRef.current = existingMap;
+            console.log('Recovered existing map instance');
+            return;
+          }
+        }
+      }
       
       // Show error message in the map container
-      if (mapRef.current) {
+      if (mapRef.current && !mapInstanceRef.current) {
         mapRef.current.innerHTML = `
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #f5f5f5; border-radius: 8px;">
             <p style="color: #666; margin-bottom: 10px;">Failed to load map</p>
@@ -190,81 +218,181 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
         toast.error('Failed to load map. Please refresh the page.');
       }
     }
-  };
+  }, []);
 
-  // Reverse geocoding to get address from coordinates
-  const reverseGeocode = async (lat, lng, setFieldValue = null) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
-      );
-      const data = await response.json();
-      if (data.display_name && setFieldValue) {
-        setFieldValue('location', data.display_name);
-      }
-    } catch (error) {
-      console.error('Error reverse geocoding:', error);
+  // Initialize map when modal opens and location tab is active - optimized for faster rendering
+  useEffect(() => {
+    if (isOpen && activeTab === 'location' && mapRef.current && !mapInstanceRef.current && !isInitializingRef.current) {
+      // Reset retry count when starting fresh
+      mapInitRetryCountRef.current = 0;
+      // Reduced delay for faster initialization
+      const timer = setTimeout(() => {
+        if (!mapInstanceRef.current && !isInitializingRef.current) {
+          console.log('Attempting to initialize map...');
+          initializeMap();
+        }
+      }, 100); // Reduced from 300ms for faster rendering
+      return () => clearTimeout(timer);
     }
-  };
+  }, [isOpen, activeTab, initializeMap]);
 
-  // Search for locations
-  const searchLocation = async (query) => {
-    if (!query.trim()) {
+  // Force map resize when tab becomes active
+  useEffect(() => {
+    if (activeTab === 'location' && mapInstanceRef.current) {
+      setTimeout(() => {
+        mapInstanceRef.current.invalidateSize();
+        console.log('Map resized');
+      }, 100);
+    }
+  }, [activeTab]);
+
+  // Cleanup map when modal closes
+  useEffect(() => {
+    if (!isOpen && mapInstanceRef.current) {
+      try {
+        mapInstanceRef.current.remove();
+      } catch (e) {
+        console.log('Error removing map:', e);
+      }
+      mapInstanceRef.current = null;
+      markerRef.current = null;
+      mapInitRetryCountRef.current = 0;
+      isInitializingRef.current = false;
+    }
+    
+    // Cleanup on unmount or close
+    return () => {
+      // Cancel pending search requests
+      if (searchAbortControllerRef.current) {
+        searchAbortControllerRef.current.abort();
+        searchAbortControllerRef.current = null;
+      }
+      
+      // Cancel pending reverse geocoding requests
+      if (reverseGeocodeAbortControllerRef.current) {
+        reverseGeocodeAbortControllerRef.current.abort();
+        reverseGeocodeAbortControllerRef.current = null;
+      }
+      
+      // Clear search timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [isOpen]);
+
+  // Reverse geocoding to get address from coordinates - using optimized service
+  const handleReverseGeocode = useCallback(async (lat, lng, setFieldValue = null) => {
+    // Cancel previous reverse geocoding request
+    if (reverseGeocodeAbortControllerRef.current) {
+      reverseGeocodeAbortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller
+    const controller = new AbortController();
+    reverseGeocodeAbortControllerRef.current = controller;
+    
+    try {
+      const address = await reverseGeocode(lat, lng, controller.signal);
+      
+      if (address && setFieldValue) {
+        setFieldValue('location', address);
+      }
+      
+      return address;
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        return null; // Request was cancelled, ignore
+      }
+      console.error('Error reverse geocoding:', error);
+      return null;
+    } finally {
+      if (reverseGeocodeAbortControllerRef.current === controller) {
+        reverseGeocodeAbortControllerRef.current = null;
+      }
+    }
+  }, []);
+
+  // Search for locations - using optimized geocoding service
+  const searchLocation = useCallback(async (query) => {
+    const trimmedQuery = query.trim();
+    
+    if (!trimmedQuery) {
       setSearchResults([]);
       return;
     }
 
+    // Minimum 2 characters for search
+    if (trimmedQuery.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    // Cancel previous search request
+    if (searchAbortControllerRef.current) {
+      searchAbortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller
+    const controller = new AbortController();
+    searchAbortControllerRef.current = controller;
+    
     setIsSearching(true);
+    
     try {
-      // Add User-Agent header and handle CORS
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
-        {
-          headers: {
-            'User-Agent': 'PLAN-it Urban Planning App'
-          }
-        }
-      );
+      const results = await searchLocations(trimmedQuery, controller.signal);
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      // Only update if this request hasn't been cancelled
+      if (!controller.signal.aborted) {
+        setSearchResults(results || []);
+      }
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        // Request was cancelled, don't update state
+        return;
       }
       
-      const data = await response.json();
-      setSearchResults(data);
-    } catch (error) {
       console.error('Error searching location:', error);
       
-      // Provide fallback search results for common cities
+      // Provide fallback search results for common cities only on real errors
       const fallbackResults = [
-        { display_name: `${query} (Manual Entry)`, lat: "0", lon: "0" },
+        { display_name: `${trimmedQuery} (Manual Entry)`, lat: "0", lon: "0" },
         { display_name: "New York, NY, USA", lat: "40.7128", lon: "-74.0060" },
         { display_name: "London, UK", lat: "51.5074", lon: "-0.1278" },
         { display_name: "Paris, France", lat: "48.8566", lon: "2.3522" },
         { display_name: "Tokyo, Japan", lat: "35.6762", lon: "139.6503" }
       ].filter(result => 
-        result.display_name.toLowerCase().includes(query.toLowerCase())
+        result.display_name.toLowerCase().includes(trimmedQuery.toLowerCase())
       );
       
-      setSearchResults(fallbackResults);
-      
-      if (typeof toast !== 'undefined') {
+      if (!controller.signal.aborted) {
+        setSearchResults(fallbackResults);
         toast.error('Location search unavailable. Using fallback results.');
       }
     } finally {
+      if (searchAbortControllerRef.current === controller) {
+        searchAbortControllerRef.current = null;
+      }
       setIsSearching(false);
     }
-  };
+  }, []);
 
-  // Handle location search input
-  const handleLocationSearch = (value) => {
+  // Handle location search input - optimized for faster response
+  const handleLocationSearch = useCallback((value) => {
     setLocationSearch(value);
-    // Debounce search
-    const timeoutId = setTimeout(() => {
-      searchLocation(value);
-    }, 500);
-    return () => clearTimeout(timeoutId);
-  };
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    // Debounce search with shorter delay for faster response
+    if (value.trim().length >= 2) {
+      searchTimeoutRef.current = setTimeout(() => {
+        searchLocation(value);
+      }, 300); // Reduced from 500ms for faster search
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchLocation]);
 
 
   const handleSubmit = async (values, { setSubmitting, setFieldError, resetForm: formikReset }) => {
@@ -379,27 +507,81 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
                   const lat = parseFloat(result.lat);
                   const lng = parseFloat(result.lon);
                   
+                  if (isNaN(lat) || isNaN(lng)) {
+                    console.error('Invalid coordinates:', result);
+                    toast.error('Invalid location coordinates');
+                    return;
+                  }
+                  
                   setSelectedLocation({ lat, lng });
                   setFieldValue('coordinates', { lat, lng });
                   setFieldValue('location', result.display_name);
                   setLocationSearch(result.display_name);
                   setSearchResults([]);
 
-                  // Update map if initialized
-                  if (mapInstanceRef.current) {
+                  // Update map - ensure it's initialized first if needed
+                  const updateMapWithLocation = async () => {
                     try {
                       const L = window.L || (await import('leaflet')).default;
-                      mapInstanceRef.current.setView([lat, lng], 15);
-                      if (markerRef.current) {
-                        mapInstanceRef.current.removeLayer(markerRef.current);
+                      
+                      // If map is not initialized, initialize it first
+                      if (!mapInstanceRef.current) {
+                        // Switch to location tab if not already there
+                        if (activeTab !== 'location') {
+                          setActiveTab('location');
+                        }
+                        // Wait a bit for the tab to render, then initialize
+                        setTimeout(async () => {
+                          if (!mapInstanceRef.current && mapRef.current) {
+                            await initializeMap();
+                            // Wait for map to be ready
+                            setTimeout(() => updateMapWithLocation(), 200);
+                          }
+                        }, 100);
+                        return;
                       }
+
+                      const map = mapInstanceRef.current;
+                      
+                      // Remove existing marker
+                      if (markerRef.current) {
+                        map.removeLayer(markerRef.current);
+                        markerRef.current = null;
+                      }
+                      
+                      // Center and zoom to the location with smooth animation
+                      map.setView([lat, lng], 15, {
+                        animate: true,
+                        duration: 0.5
+                      });
+                      
+                      // Add marker with popup
                       markerRef.current = L.marker([lat, lng], {
-                        title: result.display_name
-                      }).addTo(mapInstanceRef.current);
+                        title: result.display_name,
+                        draggable: false
+                      }).addTo(map);
+                      
+                      // Add popup with location name
+                      markerRef.current.bindPopup(result.display_name, {
+                        closeButton: true,
+                        autoClose: false,
+                        autoPan: true
+                      }).openPopup();
+                      
+                      // Ensure map is properly sized
+                      setTimeout(() => {
+                        map.invalidateSize();
+                      }, 100);
+                      
+                      console.log('Map updated with location:', result.display_name);
                     } catch (error) {
                       console.error('Error updating map:', error);
+                      toast.error('Failed to update map with location');
                     }
-                  }
+                  };
+                  
+                  // Update map immediately if available, or wait for initialization
+                  updateMapWithLocation();
                 };
 
                 // Set up map click handler when map is ready
@@ -422,16 +604,40 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
                       // Add or update marker
                       try {
                         const L = window.L || (await import('leaflet')).default;
+                        
+                        // Remove existing marker
                         if (markerRef.current) {
                           map.removeLayer(markerRef.current);
+                          markerRef.current = null;
                         }
                         
+                        // Add new marker with popup
                         markerRef.current = L.marker([lat, lng], {
-                          title: 'Selected Location'
+                          title: 'Selected Location',
+                          draggable: false
                         }).addTo(map);
+                        
+                        // Add temporary popup while reverse geocoding
+                        const tempPopup = markerRef.current.bindPopup('Loading address...', {
+                          closeButton: true,
+                          autoClose: false,
+                          autoPan: true
+                        }).openPopup();
 
-                        // Reverse geocoding to get address
-                        reverseGeocode(lat, lng, setFieldValue);
+                        // Reverse geocoding to get address using optimized service
+                        handleReverseGeocode(lat, lng, setFieldValue).then((address) => {
+                          // Update popup with address if available
+                          if (markerRef.current && address) {
+                            markerRef.current.setPopupContent(address);
+                          } else if (markerRef.current) {
+                            markerRef.current.setPopupContent(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+                          }
+                        }).catch(() => {
+                          // Keep coordinates if reverse geocoding fails
+                          if (markerRef.current) {
+                            markerRef.current.setPopupContent(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+                          }
+                        });
                       } catch (error) {
                         console.error('Error handling map click:', error);
                       }
@@ -441,10 +647,12 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
                     
                     // Cleanup
                     return () => {
-                      map.off('click', handleMapClick);
+                      if (map && map.off) {
+                        map.off('click', handleMapClick);
+                      }
                     };
                   }
-                }, [activeTab]); // Only depend on activeTab, setFieldValue is stable from Formik
+                }, [activeTab, setFieldValue]); // Include setFieldValue in dependencies
 
                 return (
                   <Form className="flex flex-col gap-8">
@@ -588,6 +796,11 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
                                   <Input
                                     {...field}
                                     type="date"
+                                    value={field.value || ''} // Convert null to empty string for date input
+                                    onChange={(e) => {
+                                      const value = e.target.value || null; // Convert empty string to null
+                                      form.setFieldValue('startDate', value);
+                                    }}
                                     className={form.touched.startDate && form.errors.startDate ? 'border-destructive focus:border-destructive focus:ring-destructive' : ''}
                                   />
                                   {form.touched.startDate && form.errors.startDate && (
@@ -606,6 +819,11 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
                                   <Input
                                     {...field}
                                     type="date"
+                                    value={field.value || ''} // Convert null to empty string for date input
+                                    onChange={(e) => {
+                                      const value = e.target.value || null; // Convert empty string to null
+                                      form.setFieldValue('endDate', value);
+                                    }}
                                     className={form.touched.endDate && form.errors.endDate ? 'border-destructive focus:border-destructive focus:ring-destructive' : ''}
                                   />
                                   {form.touched.endDate && form.errors.endDate && (
@@ -706,19 +924,28 @@ const CreateProjectModal = ({ isOpen, onClose }) => {
                             position: 'relative'
                           }}
                         />
-                        {!mapInstanceRef.current && activeTab === 'location' && (
+                        {!mapInstanceRef.current && activeTab === 'location' && !mapRef.current?._leaflet_id && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-slate-900/90 z-10 gap-2">
                             <div className="w-4 h-4 border-2 border-transparent border-t-current animate-spin text-accent" />
                             <span className="text-sm text-muted-foreground">Loading map...</span>
                             <button 
                               type="button"
                               onClick={() => {
-                                console.log('Manual map initialization triggered');
-                                initializeMap();
+                                // Triple check: ref, initialization flag, and Leaflet instance
+                                if (!isInitializingRef.current && 
+                                    !mapInstanceRef.current && 
+                                    !mapRef.current?._leaflet_id) {
+                                  console.log('Manual map initialization triggered');
+                                  mapInitRetryCountRef.current = 0;
+                                  initializeMap();
+                                } else {
+                                  console.log('Map already initialized or initializing, skipping...');
+                                }
                               }}
-                              className="mt-2.5 px-4 py-2 bg-accent text-white border-none rounded cursor-pointer hover:bg-accent/90"
+                              disabled={isInitializingRef.current || !!mapInstanceRef.current || !!mapRef.current?._leaflet_id}
+                              className="mt-2.5 px-4 py-2 bg-accent text-white border-none rounded cursor-pointer hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              Retry Loading Map
+                              {isInitializingRef.current ? 'Initializing...' : 'Retry Loading Map'}
                             </button>
                           </div>
                         )}

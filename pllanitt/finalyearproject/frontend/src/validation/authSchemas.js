@@ -320,11 +320,26 @@ export const projectSchema = Yup.object().shape({
     .default('Medium'),
   startDate: Yup.date()
     .required('Start date is required')
-    .nullable(),
+    .nullable()
+    .transform((value, originalValue) => {
+      // Handle empty strings and convert to null
+      if (originalValue === '' || originalValue === null || originalValue === undefined) {
+        return null;
+      }
+      return value;
+    }),
   endDate: Yup.date()
     .nullable()
+    .transform((value, originalValue) => {
+      // Handle empty strings and convert to null
+      if (originalValue === '' || originalValue === null || originalValue === undefined) {
+        return null;
+      }
+      return value;
+    })
     .when('startDate', (startDate, schema) => {
-      if (startDate) {
+      // Only validate if startDate is a valid date
+      if (startDate && !isNaN(new Date(startDate).getTime())) {
         return schema.min(startDate, 'End date must be after start date');
       }
       return schema;
