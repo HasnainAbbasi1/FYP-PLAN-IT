@@ -581,14 +581,14 @@ const TerrainAnalysisPanel = ({ analysisData, onLayerToggle }) => {
   };
 
   const ZoningTab = () => (
-    <div className="analysis-grid">
-      <div className="analysis-card">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-6 m-0">
+      <div className="bg-card border border-border rounded-2xl p-6 shadow-md transition-all duration-300 relative overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:border-primary before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-gradient-to-r before:from-primary before:via-accent before:to-cyan-500">
         <h4 className="m-0 mb-4 text-card-foreground text-lg font-bold flex items-center gap-2.5"><Building2 className="w-5 h-5 inline mr-2" />Terrain-Based Zoning</h4>
-        <div className="stat-grid">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
           {zoning_analysis?.zoning_stats && Object.entries(zoning_analysis.zoning_stats).map(([id, stat]) => (
-            <div key={id} className="stat-item">
-              <span className="stat-label" style={{ fontSize: '11px' }}>{stat.name}:</span>
-              <span className="stat-value" style={{ fontSize: '16px', fontWeight: 'bold' }}>{stat.area_percentage}%</span>
+            <div key={id} className="flex justify-between items-center px-4 py-3 bg-muted rounded-xl border border-border transition-all duration-300 hover:bg-accent hover:-translate-y-px">
+              <span className="text-muted-foreground font-medium text-sm">{stat.name}:</span>
+              <span className="font-bold text-foreground text-base" style={{ fontSize: '14px' }}>{stat.area_percentage}%</span>
             </div>
           ))}
         </div>
@@ -614,16 +614,16 @@ const TerrainAnalysisPanel = ({ analysisData, onLayerToggle }) => {
         </div>
       </div>
 
-      <div className="analysis-card">
+      <div className="bg-card border border-border rounded-2xl p-6 shadow-md transition-all duration-300 relative overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:border-primary before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-gradient-to-r before:from-primary before:via-accent before:to-cyan-500">
         <h4 className="m-0 mb-4 text-card-foreground text-lg font-bold flex items-center gap-2.5"><Info className="w-5 h-5 inline mr-2" />Zoning Recommendations</h4>
-        <div className="analysis-alert alert-info">
-          <strong style={{ fontSize: '14px' }}>Planning Guidelines:</strong>
+        <div className="rounded-xl p-4 my-4 border-l-4 border-primary shadow-md bg-muted text-foreground border-l-primary">
+          <strong className="text-sm" style={{ fontSize: '14px' }}>Planning Guidelines:</strong>
           <ul className="m-3 pl-5 list-none" style={{ fontSize: '13px' }}>
             {zoning_analysis?.zoning_stats && (
               <>
-                <li>Focus development in {zoning_analysis.zoning_stats[1]?.area_percentage}% suitable areas</li>
-                <li>Implement conservation measures in {zoning_analysis.zoning_stats[3]?.area_percentage}% conservation zones</li>
-                <li>Restrict construction in {zoning_analysis.zoning_stats[4]?.area_percentage}% high-risk areas</li>
+                <li className="mb-2 text-muted-foreground relative pl-5 before:content-['✓'] before:absolute before:left-0 before:text-green-500 before:font-bold">Focus development in {zoning_analysis.zoning_stats[1]?.area_percentage}% suitable areas</li>
+                <li className="mb-2 text-muted-foreground relative pl-5 before:content-['✓'] before:absolute before:left-0 before:text-green-500 before:font-bold">Implement conservation measures in {zoning_analysis.zoning_stats[3]?.area_percentage}% conservation zones</li>
+                <li className="mb-2 text-muted-foreground relative pl-5 before:content-['✓'] before:absolute before:left-0 before:text-green-500 before:font-bold">Restrict construction in {zoning_analysis.zoning_stats[4]?.area_percentage}% high-risk areas</li>
               </>
             )}
           </ul>
@@ -639,37 +639,49 @@ const TerrainAnalysisPanel = ({ analysisData, onLayerToggle }) => {
         <p style={{ fontSize: '13px' }}>Comprehensive terrain assessment for the selected polygon, including validation, elevation stats, and visualization assets.</p>
       </div>
 
-      {/* Quick Stats - Prominent Section at Top */}
-      <div className="analysis-card" style={{ gridColumn: '1 / -1', background: 'linear-gradient(135deg, #2B4D5F 0%, #4588AD 100%)', color: 'white', marginBottom: '24px' }}>
-        <h4 style={{ color: 'white', fontSize: '22px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Activity className="w-6 h-6" />
-          Quick Stats
-        </h4>
-        <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
-          <div className="stat-item" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-            <span className="stat-label" style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Mean Elevation</span>
-            <span className="stat-value" style={{ color: 'white', fontSize: '28px', fontWeight: 'bold' }}>{stats?.mean_elevation?.toFixed?.(2)} <span style={{ fontSize: '16px', opacity: 0.8 }}>m</span></span>
-          </div>
-          <div className="stat-item" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-            <span className="stat-label" style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Elevation Range</span>
-            <span className="stat-value" style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>{stats?.min_elevation?.toFixed?.(2)}–{stats?.max_elevation?.toFixed?.(2)} <span style={{ fontSize: '16px', opacity: 0.8 }}>m</span></span>
-          </div>
-          <div className="stat-item" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-            <span className="stat-label" style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Mean Slope</span>
-            <span className="stat-value" style={{ color: 'white', fontSize: '28px', fontWeight: 'bold' }}>{slope_analysis?.mean_slope?.toFixed?.(2)}<span style={{ fontSize: '20px', opacity: 0.8 }}>°</span></span>
-          </div>
-          <div className="stat-item" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-            <span className="stat-label" style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Analysis Type</span>
-            <span className="stat-value" style={{ color: 'white', fontSize: '16px', fontWeight: '600' }}>{stats?.analysis_type === 'advanced' ? 'Advanced (Real DEM)' : 'Basic'}</span>
-          </div>
-          <div className="stat-item" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-            <span className="stat-label" style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>CRS</span>
-            <span className="stat-value" style={{ color: 'white', fontSize: '16px', fontWeight: '600' }}>{stats?.target_crs || 'EPSG:4326'}</span>
-          </div>
-          <div className="stat-item" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-            <span className="stat-label" style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Processed Types</span>
-            <span className="stat-value" style={{ color: 'white', fontSize: '16px', fontWeight: '600' }}>{Array.isArray(stats?.data_types_processed) ? stats.data_types_processed.join(', ') : 'DEM'}</span>
-          </div>
+      {/* Quick Stats - card layout to match other analysis sections */}
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4 mb-6">
+        <div className="bg-card border border-border rounded-2xl p-4 shadow-md flex flex-col gap-1">
+          <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase flex items-center gap-2">
+            <Activity className="w-4 h-4" />
+            Mean Elevation
+          </span>
+          <span className="text-3xl font-bold text-card-foreground">
+            {stats?.mean_elevation?.toFixed?.(2)}
+            <span className="text-base opacity-70 ml-1">m</span>
+          </span>
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl p-4 shadow-md flex flex-col gap-1">
+          <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            Elevation Range
+          </span>
+          <span className="text-xl font-bold text-card-foreground">
+            {stats?.min_elevation?.toFixed?.(2)}–{stats?.max_elevation?.toFixed?.(2)}
+            <span className="text-base opacity-70 ml-1">m</span>
+          </span>
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl p-4 shadow-md flex flex-col gap-1">
+          <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            Mean Slope
+          </span>
+          <span className="text-3xl font-bold text-card-foreground">
+            {slope_analysis?.mean_slope?.toFixed?.(2)}
+            <span className="text-xl opacity-70 ml-1">°</span>
+          </span>
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl p-4 shadow-md flex flex-col gap-1">
+          <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            Analysis Type
+          </span>
+          <span className="text-sm font-semibold text-card-foreground">
+            {stats?.analysis_type === 'advanced' ? 'Advanced (Real DEM)' : 'Basic'}
+          </span>
+          <span className="text-xs text-muted-foreground mt-1">
+            CRS: {stats?.target_crs || 'EPSG:4326'} • Types: {Array.isArray(stats?.data_types_processed) ? stats.data_types_processed.join(', ') : 'DEM'}
+          </span>
         </div>
       </div>
 
@@ -702,27 +714,41 @@ const TerrainAnalysisPanel = ({ analysisData, onLayerToggle }) => {
   );
 
   const ValidationTab = () => (
-    <div className="validation-grid">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-6 m-0">
       {/* Summary card */}
       {stats && (
-        <div className="validation-card">
-          <h4 style={{ fontSize: '16px' }}>Summary</h4>
-          <div className="stat-grid">
-            <div className="stat-item">
-              <span className="stat-label" style={{ fontSize: '11px' }}>Processed:</span>
-              <span className="stat-value" style={{ fontSize: '13px' }}>{new Date(stats.processing_timestamp || Date.now()).toLocaleString()}</span>
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-md transition-all duration-300 relative overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:border-primary before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-gradient-to-r before:from-primary before:via-accent before:to-cyan-500">
+          <h4 className="m-0 mb-4 text-card-foreground text-lg font-bold flex items-center gap-2.5">
+            <CheckCircle className="w-5 h-5 inline mr-2" />
+            Validation Summary
+          </h4>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
+            <div className="flex justify-between items-center px-4 py-3 bg-muted rounded-xl border border-border transition-all duration-300 hover:bg-accent hover:-translate-y-px">
+              <span className="text-muted-foreground font-medium text-sm">Processed:</span>
+              <span className="font-bold text-foreground text-base" style={{ fontSize: '13px' }}>
+                {new Date(stats.processing_timestamp || Date.now()).toLocaleString()}
+              </span>
             </div>
-            <div className="stat-item">
-              <span className="stat-label" style={{ fontSize: '11px' }}>Mean Elevation:</span>
-              <span className="stat-value" style={{ fontSize: '16px', fontWeight: 'bold' }}>{stats.mean_elevation?.toFixed?.(2)} m</span>
+            <div className="flex justify-between items-center px-4 py-3 bg-muted rounded-xl border border-border transition-all duration-300 hover:bg-accent hover:-translate-y-px">
+              <span className="text-muted-foreground font-medium text-sm">Mean Elevation:</span>
+              <span className="font-bold text-foreground text-base" style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                {stats.mean_elevation?.toFixed?.(2)}
+                <span style={{ fontSize: '16px' }}> m</span>
+              </span>
             </div>
-            <div className="stat-item">
-              <span className="stat-label" style={{ fontSize: '11px' }}>Min Elevation:</span>
-              <span className="stat-value" style={{ fontSize: '16px', fontWeight: 'bold' }}>{stats.min_elevation?.toFixed?.(2)} m</span>
+            <div className="flex justify-between items-center px-4 py-3 bg-muted rounded-xl border border-border transition-all duration-300 hover:bg-accent hover:-translate-y-px">
+              <span className="text-muted-foreground font-medium text-sm">Min Elevation:</span>
+              <span className="font-bold text-foreground text-base" style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                {stats.min_elevation?.toFixed?.(2)}
+                <span style={{ fontSize: '16px' }}> m</span>
+              </span>
             </div>
-            <div className="stat-item">
-              <span className="stat-label" style={{ fontSize: '11px' }}>Max Elevation:</span>
-              <span className="stat-value" style={{ fontSize: '16px', fontWeight: 'bold' }}>{stats.max_elevation?.toFixed?.(2)} m</span>
+            <div className="flex justify-between items-center px-4 py-3 bg-muted rounded-xl border border-border transition-all duration-300 hover:bg-accent hover:-translate-y-px">
+              <span className="text-muted-foreground font-medium text-sm">Max Elevation:</span>
+              <span className="font-bold text-foreground text-base" style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                {stats.max_elevation?.toFixed?.(2)}
+                <span style={{ fontSize: '16px' }}> m</span>
+              </span>
             </div>
           </div>
         </div>
@@ -730,17 +756,39 @@ const TerrainAnalysisPanel = ({ analysisData, onLayerToggle }) => {
 
       {/* Polygon Validation (from geojson_validation.summary if present) */}
       {validation?.geojson_validation && (
-        <div className="validation-card">
-          <h4 style={{ fontSize: '16px' }}>Polygon Validation</h4>
-          <ul className="validation-list" style={{ fontSize: '13px' }}>
-            <li className="valid">{validation.geojson_validation.is_valid ? 'Valid ✓' : 'Invalid ✗'}</li>
-            {validation.geojson_validation.details?.map?.((d, i) => (
-              <li key={i}>{d}</li>
-            ))}
-          </ul>
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-md transition-all duration-300 relative overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:border-primary before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-gradient-to-r before:from-primary before:via-accent before:to-cyan-500">
+          <h4 className="m-0 mb-4 text-card-foreground text-lg font-bold flex items-center gap-2.5">
+            <CheckCircle className="w-5 h-5 inline mr-2" />
+            Polygon Validation
+          </h4>
+          <div className="flex justify-between items-center px-4 py-3 bg-muted rounded-xl border border-border transition-all duration-300 hover:bg-accent hover:-translate-y-px mb-4">
+            <span className="text-muted-foreground font-medium text-sm">Status:</span>
+            <span
+              className={`font-bold text-base ${
+                validation.geojson_validation.is_valid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+              }`}
+              style={{ fontSize: '16px' }}
+            >
+              {validation.geojson_validation.is_valid ? 'Valid ✓' : 'Invalid ✗'}
+            </span>
+          </div>
+          {validation.geojson_validation.details && validation.geojson_validation.details.length > 0 && (
+            <>
+              <h5 className="m-4 mb-3 text-muted-foreground text-base font-semibold" style={{ fontSize: '14px' }}>
+                Validation Details
+              </h5>
+              {validation.geojson_validation.details.map((d, i) => (
+                <div
+                  key={i}
+                  className="flex justify-between items-center px-4 py-3 bg-muted rounded-xl border border-border transition-all duration-300 hover:bg-accent hover:-translate-y-px"
+                >
+                  <span className="text-muted-foreground font-medium text-sm">{d}</span>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       )}
-
     </div>
   );
 

@@ -51,8 +51,14 @@ def compute_terrain_stats(dem_path, slope_path=None, aspect_path=None, flow_acc_
         dem_data = src.read(1, masked=True)
         dem_profile = src.profile
     
+    # Convert MaskedArray to regular array with NaN for masked values to avoid warnings
+    if hasattr(dem_data, 'mask'):
+        dem_array = np.where(dem_data.mask, np.nan, dem_data.data)
+    else:
+        dem_array = dem_data
+    
     # Calculate elevation statistics
-    valid_elevation = dem_data[~dem_data.mask] if hasattr(dem_data, 'mask') else dem_data[~np.isnan(dem_data)]
+    valid_elevation = dem_array[~np.isnan(dem_array)]
     
     if len(valid_elevation) > 0:
         stats['elevation'] = {
@@ -76,7 +82,13 @@ def compute_terrain_stats(dem_path, slope_path=None, aspect_path=None, flow_acc_
         with rasterio.open(slope_path) as src:
             slope_data = src.read(1, masked=True)
         
-        valid_slope = slope_data[~slope_data.mask] if hasattr(slope_data, 'mask') else slope_data[~np.isnan(slope_data)]
+        # Convert MaskedArray to regular array with NaN for masked values
+        if hasattr(slope_data, 'mask'):
+            slope_array = np.where(slope_data.mask, np.nan, slope_data.data)
+        else:
+            slope_array = slope_data
+        
+        valid_slope = slope_array[~np.isnan(slope_array)]
         
         if len(valid_slope) > 0:
             stats['slope'] = {
@@ -130,7 +142,13 @@ def compute_terrain_stats(dem_path, slope_path=None, aspect_path=None, flow_acc_
         with rasterio.open(aspect_path) as src:
             aspect_data = src.read(1, masked=True)
         
-        valid_aspect = aspect_data[~aspect_data.mask] if hasattr(aspect_data, 'mask') else aspect_data[~np.isnan(aspect_data)]
+        # Convert MaskedArray to regular array with NaN for masked values
+        if hasattr(aspect_data, 'mask'):
+            aspect_array = np.where(aspect_data.mask, np.nan, aspect_data.data)
+        else:
+            aspect_array = aspect_data
+        
+        valid_aspect = aspect_array[~np.isnan(aspect_array)]
         
         if len(valid_aspect) > 0:
             stats['aspect'] = {
@@ -174,7 +192,13 @@ def compute_terrain_stats(dem_path, slope_path=None, aspect_path=None, flow_acc_
         with rasterio.open(flow_acc_path) as src:
             flow_data = src.read(1, masked=True)
         
-        valid_flow = flow_data[~flow_data.mask] if hasattr(flow_data, 'mask') else flow_data[~np.isnan(flow_data)]
+        # Convert MaskedArray to regular array with NaN for masked values
+        if hasattr(flow_data, 'mask'):
+            flow_array = np.where(flow_data.mask, np.nan, flow_data.data)
+        else:
+            flow_array = flow_data
+        
+        valid_flow = flow_array[~np.isnan(flow_array)]
         
         if len(valid_flow) > 0:
             stats['flow_accumulation'] = {

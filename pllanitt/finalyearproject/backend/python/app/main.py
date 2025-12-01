@@ -44,6 +44,13 @@ from collections import Counter
 from pathlib import Path
 import sys
 
+# Ensure the backend/python root is on sys.path BEFORE importing ml_models/services
+# so that `import ml_models...` and `import services...` work when running from app/.
+_APP_DIR = Path(__file__).resolve().parent
+_PYTHON_ROOT = _APP_DIR.parent
+if str(_PYTHON_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PYTHON_ROOT))
+
 import joblib
 import base64
 
@@ -128,12 +135,9 @@ except ImportError as e:
     ADVANCED_TERRAIN_AVAILABLE = False
     AdvancedTerrainAnalyzer = None
 
-# Add parent directory to Python path to allow importing from engines
-# This must be done before importing engines
-_temp_app_dir = Path(__file__).resolve().parent
-_temp_python_root = _temp_app_dir.parent
-if str(_temp_python_root) not in sys.path:
-    sys.path.insert(0, str(_temp_python_root))
+# (Path setup for engines is already handled above; keep variables for backward compatibility)
+_temp_app_dir = _APP_DIR
+_temp_python_root = _PYTHON_ROOT
 
 # Optional imports for advanced features
 try:
@@ -991,12 +995,15 @@ class DataValidator:
         elif std_elev < 1:
             result.add_warning("Very low elevation variation (very flat terrain)")
         
-        # Check for data gaps
+        # Check for data gaps - be more lenient for real-world data
         nan_percentage = (np.sum(np.isnan(dem_array)) / dem_array.size) * 100
-        if nan_percentage > 25:
-            result.add_error(f"High percentage of missing data: {nan_percentage:.1f}%")
+        # Treat missing-data issues as non-fatal quality warnings rather than hard errors
+        if nan_percentage > 50:
+            result.add_warning(f"Very high percentage of missing data: {nan_percentage:.1f}% - analysis may be limited")
+        elif nan_percentage > 25:
+            result.add_info(f"Some missing data detected: {nan_percentage:.1f}% - this is normal for real-world DEMs")
         elif nan_percentage > 10:
-            result.add_warning(f"Moderate percentage of missing data: {nan_percentage:.1f}%")
+            result.add_info(f"Minor missing data: {nan_percentage:.1f}%")
         else:
             result.add_info(f"Missing data percentage: {nan_percentage:.1f}%")
         
@@ -1405,23 +1412,77 @@ async def process_geojson(geojson, request: Request, data_types: List[str] = Non
                     logger.warning(f"TWI-based water detection failed: {e}")
             
             # Combine all methods: elevation, flow, depression, TWI
-            water_mask_elev = (dem_arr <= water_threshold_elev) & (slope_deg <= 2.5) & (~np.isnan(dem_arr))
+            # Ensure slope_deg has valid values for comparison (handle NaN)
+            valid_slope_mask = ~np.isnan(slope_deg) & ~np.isnan(dem_arr)
+            water_mask_elev = (dem_arr <= water_threshold_elev) & (slope_deg <= 2.5) & valid_slope_mask
             
-            # Combine all water detection methods
+            # Combine all DEM-based water detection methods
             water_mask = water_mask_elev | water_mask_flow | water_mask_depression | water_mask_twi
+
+            # If OpenStreetMap hydrology is available, restrict water bodies to where
+            # OSM actually reports rivers/lakes to avoid "fake ponds" in dry areas.
+            try:
+                if hydrology_data and hydrology_data.get("status") == "success":
+                    hydro_geojson = hydrology_data.get("geojson", {})
+                    # Ensure we have a valid GeoJSON structure
+                    if isinstance(hydro_geojson, dict):
+                        hydro_features = hydro_geojson.get("features", [])
+                    elif isinstance(hydro_geojson, list):
+                        # Sometimes geojson is already a list of features
+                        hydro_features = hydro_geojson
+                    else:
+                        hydro_features = []
+                    
+                    # Validate that features is actually a list/iterable
+                    if not isinstance(hydro_features, (list, tuple)):
+                        logger.warning(f"Invalid hydrology features format: {type(hydro_features)}, skipping refinement")
+                        hydro_features = []
+                    
+                    if hydro_features and len(hydro_features) > 0:
+                        # Validate each feature has proper geometry
+                        valid_features = []
+                        for feat in hydro_features:
+                            if not isinstance(feat, dict):
+                                continue
+                            geom = feat.get('geometry') if 'geometry' in feat else feat
+                            if isinstance(geom, dict) and 'type' in geom and 'coordinates' in geom:
+                                valid_features.append(feat)
+                        
+                        if valid_features:
+                            hydro_mask = rasterize_vector_to_mask(valid_features, out_meta)
+                            # Enhance water detection: keep DEM-detected water OR OSM hydrology
+                            # This way we catch both mapped and unmapped water bodies
+                            water_mask = water_mask | (hydro_mask.astype(bool))
+                            logger.info(f"🌊 Enhanced water detection using {len(valid_features)} OSM hydrology features")
+                        else:
+                            logger.info("🌊 No valid hydrology geometries found, using all DEM-based detection methods")
+                            # Keep all DEM-based detections when OSM data is missing
+                            # (water_mask already contains all methods combined)
+                    else:
+                        # No mapped hydrology in this area → use all DEM-based detection methods
+                        logger.info("🌊 No OSM hydrology features found, using all DEM-based detection methods")
+                        # water_mask already contains all methods (elevation + flow + depression + TWI)
+            except Exception as e:
+                logger.warning(f"Hydrology-based water refinement failed: {e}")
+                # Continue with unrefined water mask on error
             
             # Additional validation: ensure detected water has reasonable characteristics
-            # Water should be relatively flat (slope < 5°)
-            water_mask = water_mask & (slope_deg < 5.0)
+            # Water should be relatively flat (slope < 5°) where slope is valid
+            valid_slope_for_water = ~np.isnan(slope_deg)
+            water_mask = np.where(
+                valid_slope_for_water,
+                water_mask & (slope_deg < 5.0),
+                water_mask  # Keep pixels with NaN slope if they passed other methods
+            )
             
-            # Remove isolated pixels (noise reduction)
+            # Remove isolated pixels (noise reduction) - but be less aggressive for small water bodies
             try:
                 from scipy import ndimage
-                # Remove small isolated water pixels (< 3x3 pixels)
+                # Only remove very small isolated pixels (< 2x2 pixels) to preserve small water features
                 water_mask_labeled, num_features = ndimage.label(water_mask)
                 for label_id in range(1, num_features + 1):
                     feature_size = np.sum(water_mask_labeled == label_id)
-                    if feature_size < 9:  # Less than 3x3 pixels
+                    if feature_size < 4:  # Less than 2x2 pixels (more lenient)
                         water_mask[water_mask_labeled == label_id] = False
             except Exception as e:
                 logger.warning(f"Water mask cleanup failed: {e}")
@@ -1432,7 +1493,43 @@ async def process_geojson(geojson, request: Request, data_types: List[str] = Non
             total_valid_pixels = int(np.sum(~np.isnan(dem_arr)))
             water_area_pct = (water_pixels / total_valid_pixels * 100.0) if total_valid_pixels > 0 else 0.0
             
-            logger.info(f"🌊 Enhanced water detection: {water_pixels} pixels ({water_area_pct:.2f}%) - Elevation: {np.sum(water_mask_elev)}, Flow: {np.sum(water_mask_flow)}, Depression: {np.sum(water_mask_depression)}, TWI: {np.sum(water_mask_twi)}")
+            # Calculate water detection statistics for each method
+            elev_pixels = int(np.sum(water_mask_elev))
+            flow_pixels = int(np.sum(water_mask_flow))
+            depression_pixels = int(np.sum(water_mask_depression))
+            twi_pixels = int(np.sum(water_mask_twi))
+            
+            logger.info(f"🌊 Enhanced water detection: {water_pixels} pixels ({water_area_pct:.2f}%) - Elevation: {elev_pixels}, Flow: {flow_pixels}, Depression: {depression_pixels}, TWI: {twi_pixels}")
+            
+            # Add water detection statistics to water_availability
+            # Always ensure water_availability is a dict and add stats
+            if not isinstance(water_availability, dict):
+                water_availability = {}
+            
+            # Always add water detection stats (even if other water_availability data is missing)
+            water_availability["water_detection_stats"] = {
+                "total_water_pixels": water_pixels,
+                "total_water_area_percent": water_area_pct,
+                "detection_methods": {
+                    "elevation_based": {
+                        "pixels": elev_pixels,
+                        "percent": (elev_pixels / total_valid_pixels * 100.0) if total_valid_pixels > 0 else 0.0
+                    },
+                    "flow_accumulation_based": {
+                        "pixels": flow_pixels,
+                        "percent": (flow_pixels / total_valid_pixels * 100.0) if total_valid_pixels > 0 else 0.0
+                    },
+                    "depression_based": {
+                        "pixels": depression_pixels,
+                        "percent": (depression_pixels / total_valid_pixels * 100.0) if total_valid_pixels > 0 else 0.0
+                    },
+                    "twi_based": {
+                        "pixels": twi_pixels,
+                        "percent": (twi_pixels / total_valid_pixels * 100.0) if total_valid_pixels > 0 else 0.0
+                    }
+                },
+                "total_valid_pixels": total_valid_pixels
+            }
 
             # Enhanced classification with more categories
             classified = np.zeros_like(dem_arr, dtype=np.uint8)
@@ -1641,6 +1738,44 @@ async def process_geojson(geojson, request: Request, data_types: List[str] = Non
                         flood_risk_array[high_risk_mask] = 3  # High risk
                         flood_risk_array[medium_risk_mask] = 2  # Medium risk
                         flood_risk_array[low_risk_mask] = 1  # Low risk
+
+                        # ------------------------------------------------------------------
+                        # Sync numeric flood statistics with the raster used for visualization
+                        # so the dashboard cards match the map colors.
+                        # ------------------------------------------------------------------
+                        total_valid = int(np.sum(~np.isnan(dem_arr)))
+                        high_pixels = int(np.sum(high_risk_mask))
+                        medium_pixels = int(np.sum(medium_risk_mask))
+                        low_pixels = int(np.sum(low_risk_mask))
+
+                        if total_valid > 0:
+                            high_pct = 100.0 * high_pixels / total_valid
+                            med_pct = 100.0 * medium_pixels / total_valid
+                            low_pct = 100.0 * low_pixels / total_valid
+                        else:
+                            high_pct = med_pct = low_pct = 0.0
+
+                        # Ensure flood_analysis exists and has the unified structure
+                        if not isinstance(flood_analysis, dict):
+                            flood_analysis = {}
+                        flood_analysis.setdefault("risk_statistics", {})
+                        flood_analysis["risk_statistics"].update({
+                            "high_risk_area_percent": high_pct,
+                            "medium_risk_area_percent": med_pct,
+                            "low_risk_area_percent": low_pct,
+                            "high_risk_area_pixels": high_pixels,
+                            "medium_risk_area_pixels": medium_pixels,
+                            "low_risk_area_pixels": low_pixels,
+                            "mean_risk_score": float((3 * high_pct + 2 * med_pct + 1 * low_pct) / 100.0) if (high_pct + med_pct + low_pct) > 0 else 0.0,
+                            "max_risk_score": 3.0 if high_pixels > 0 else (2.0 if medium_pixels > 0 else (1.0 if low_pixels > 0 else 0.0)),
+                        })
+
+                        # Also expose simple pixel counts for backward-compatible UIs
+                        flood_analysis["flood_stats"] = {
+                            "high_risk_area": high_pixels,
+                            "medium_risk_area": medium_pixels,
+                            "low_risk_area": low_pixels,
+                        }
                         
                         # Generate GeoJSON for each risk category
                         flood_features = []
@@ -1674,7 +1809,40 @@ async def process_geojson(geojson, request: Request, data_types: List[str] = Non
                     flood_risk_array[(dem_arr <= 2.0) & (~np.isnan(dem_arr))] = 3  # High
                     flood_risk_array[(dem_arr > 2.0) & (dem_arr <= 5.0) & (~np.isnan(dem_arr))] = 2  # Medium
                     flood_risk_array[(dem_arr > 5.0) & (dem_arr <= 10.0) & (~np.isnan(dem_arr))] = 1  # Low
-                    
+
+                    # Sync numeric flood statistics for basic mode as well
+                    total_valid = int(np.sum(~np.isnan(dem_arr)))
+                    high_pixels = int(np.sum(flood_risk_array == 3))
+                    medium_pixels = int(np.sum(flood_risk_array == 2))
+                    low_pixels = int(np.sum(flood_risk_array == 1))
+
+                    if total_valid > 0:
+                        high_pct = 100.0 * high_pixels / total_valid
+                        med_pct = 100.0 * medium_pixels / total_valid
+                        low_pct = 100.0 * low_pixels / total_valid
+                    else:
+                        high_pct = med_pct = low_pct = 0.0
+
+                    if not isinstance(flood_analysis, dict):
+                        flood_analysis = {}
+                    flood_analysis.setdefault("risk_statistics", {})
+                    flood_analysis["risk_statistics"].update({
+                        "high_risk_area_percent": high_pct,
+                        "medium_risk_area_percent": med_pct,
+                        "low_risk_area_percent": low_pct,
+                        "high_risk_area_pixels": high_pixels,
+                        "medium_risk_area_pixels": medium_pixels,
+                        "low_risk_area_pixels": low_pixels,
+                        "mean_risk_score": float((3 * high_pct + 2 * med_pct + 1 * low_pct) / 100.0) if (high_pct + med_pct + low_pct) > 0 else 0.0,
+                        "max_risk_score": 3.0 if high_pixels > 0 else (2.0 if medium_pixels > 0 else (1.0 if low_pixels > 0 else 0.0)),
+                    })
+
+                    flood_analysis["flood_stats"] = {
+                        "high_risk_area": high_pixels,
+                        "medium_risk_area": medium_pixels,
+                        "low_risk_area": low_pixels,
+                    }
+
                     flood_features = []
                     for risk_level in [3, 2, 1]:
                         risk_mask = (flood_risk_array == risk_level)

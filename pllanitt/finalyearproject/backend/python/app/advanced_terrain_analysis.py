@@ -214,13 +214,96 @@ class AdvancedTerrainAnalyzer:
         flow_min = np.nanmin(flow)
         flow_max = np.nanmax(flow)
         if flow_max > flow_min:
-            flow_norm = (flow - flow_min) / (flow_max - flow_min + 1e-6)
+            flow_norm_small = (flow - flow_min) / (flow_max - flow_min + 1e-6)
         else:
-            flow_norm = np.zeros_like(flow)
+            flow_norm_small = np.zeros_like(flow)
+
+        # Resize back to the original DEM shape so callers can safely combine
+        # the result with DEM-sized rasters (e.g. slope, masks)
+        flow_norm = np.zeros_like(dem, dtype=float)
+        # Place the computed values starting at (1,1); keep outer border at 0
+        flow_norm[1:h, 1:w] = flow_norm_small
 
         # Dummy drainage direction: flat array for now (could be improved later)
-        drainage_dir = np.zeros_like(flow_norm, dtype=np.uint8)
+        drainage_small = np.zeros_like(flow_norm_small, dtype=np.uint8)
+        drainage_dir = np.zeros_like(dem, dtype=np.uint8)
+        drainage_dir[1:h, 1:w] = drainage_small
 
         return flow_norm, drainage_dir
+
+    def _assess_flood_risk_advanced(self, dem_arr: np.ndarray, flow_accum, drainage_network, bounds):
+        """
+        Lightweight flood‑risk helper to match the interface used in `main.py`.
+
+        The caller in `main.py` currently ignores the returned structure and
+        relies on its own categorisation, but expects this method to exist.
+        We provide a simple, numerically stable implementation so advanced
+        flood statistics are still available if needed.
+        """
+        dem = dem_arr.astype(float)
+        valid = np.isfinite(dem)
+        if not np.any(valid):
+            return {
+                "flood_risk_map": None,
+                "risk_statistics": {
+                    "high_risk_area_percent": 0.0,
+                    "medium_risk_area_percent": 0.0,
+                    "low_risk_area_percent": 0.0,
+                    "high_risk_area_pixels": 0,
+                    "medium_risk_area_pixels": 0,
+                    "low_risk_area_pixels": 0,
+                    "mean_risk_score": 0.0,
+                    "max_risk_score": 0.0,
+                },
+            }
+
+        mean_elev = float(np.nanmean(dem[valid]))
+
+        # Simple elevation + flow based risk score (0–3)
+        elev_risk = np.zeros_like(dem, dtype=float)
+        elev_risk[dem < mean_elev - 2] = 3
+        elev_risk[(dem >= mean_elev - 2) & (dem < mean_elev)] = 2
+        elev_risk[(dem >= mean_elev) & (dem < mean_elev + 2)] = 1
+
+        if flow_accum is None:
+            flow_accum = np.zeros_like(dem, dtype=float)
+
+        # Scale flow contribution to 0–3
+        fa = np.where(np.isfinite(flow_accum), flow_accum, 0.0)
+        if fa.size and np.nanmax(fa) > 0:
+            fa_norm = fa / (np.nanmax(fa) + 1e-6)
+        else:
+            fa_norm = np.zeros_like(fa)
+        flow_risk = 3.0 * fa_norm
+
+        combined = 0.5 * elev_risk + 0.5 * flow_risk
+        combined = np.clip(combined, 0.0, 3.0)
+
+        total_pixels = int(np.sum(valid))
+        high = combined >= 2.5
+        med = (combined >= 1.5) & (combined < 2.5)
+        low = combined < 1.5
+
+        high_px = int(np.sum(high & valid))
+        med_px = int(np.sum(med & valid))
+        low_px = int(np.sum(low & valid))
+
+        stats = {
+            "high_risk_area_percent": (100.0 * high_px / total_pixels) if total_pixels else 0.0,
+            "medium_risk_area_percent": (100.0 * med_px / total_pixels) if total_pixels else 0.0,
+            "low_risk_area_percent": (100.0 * low_px / total_pixels) if total_pixels else 0.0,
+            "high_risk_area_pixels": high_px,
+            "medium_risk_area_pixels": med_px,
+            "low_risk_area_pixels": low_px,
+            "mean_risk_score": float(np.nanmean(combined[valid])),
+            "max_risk_score": float(np.nanmax(combined[valid])),
+        }
+
+        # We intentionally do not return the full raster by default to avoid
+        # very large JSON payloads; `main.py` builds its own categorical map.
+        return {
+            "flood_risk_map": None,
+            "risk_statistics": stats,
+        }
 
 
