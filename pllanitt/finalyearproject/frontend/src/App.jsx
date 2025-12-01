@@ -18,6 +18,7 @@ import Editor from "./pages/planning/Editor.jsx";
 import Analysis from "./pages/analysis/Analysis.jsx";
 import Zoning from "./pages/planning/Zoning.jsx";
 import PolygonZoning from "./pages/planning/PolygonZoning.jsx";
+import ZoningGenerator from "./pages/planning/ZoningGenerator.jsx";
 import Roads from "./pages/design/Roads.jsx";
 import Settings from "./pages/admin/Settings.jsx";
 import Projects from "./pages/planning/Projects.jsx";
@@ -344,6 +345,13 @@ const AppRoutes = () => {
       <ProtectedRoute>
         <ProjectRequiredRoute>
           <ZoningSubdivision />
+        </ProjectRequiredRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/zoning-generator" element={
+      <ProtectedRoute>
+        <ProjectRequiredRoute>
+          <ZoningGenerator />
         </ProjectRequiredRoute>
       </ProtectedRoute>
     } />

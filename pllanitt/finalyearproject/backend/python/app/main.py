@@ -9933,6 +9933,1011 @@ def create_2d_zoning_visualization(polygon_coords, zoning_data, output_path=None
         logger.error(traceback.format_exc())
         return None
 
+
+def create_2d_zoning_visualization_svg(polygon_coords, zoning_data, output_path=None):
+    """
+    Create a CDA COMPLIANT PROFESSIONAL SOCIETY LAYOUT in SVG format
+    Enhanced SVG output with better quality and scalability
+    """
+    try:
+        from xml.etree.ElementTree import Element, SubElement, tostring
+        from xml.dom import minidom
+        
+        logger.info(f"🏛️ Creating CDA COMPLIANT SOCIETY LAYOUT (SVG FORMAT)")
+        logger.info(f"Polygon coords: {len(polygon_coords) if polygon_coords else 'None'}")
+        logger.info(f"Zoning data keys: {list(zoning_data.keys()) if zoning_data else 'None'}")
+        
+        # Label sizes for SVG
+        label_sizes = {
+            "title": 32,
+            "subtitle": 22,
+            "terrain": 17,
+            "block": 13,
+            "residential_plot": 6,
+            "commercial_plot": 10,
+            "park": 17,
+            "boulevard": 16,
+            "legend_title": 16,
+            "legend_item": 13,
+            "north": 20,
+            "scale": 12,
+            "branding": 11,
+        }
+        
+        # Get terrain data (same as PNG version)
+        terrain_summary = zoning_data.get('terrain_summary', {})
+        terrain_stats = zoning_data.get('stats', {})
+        slope_analysis = zoning_data.get('slope_analysis', {})
+        flood_analysis = zoning_data.get('flood_analysis', {})
+        erosion_analysis = zoning_data.get('erosion_analysis', {})
+        
+        actual_elevation = terrain_summary.get('mean_elevation', terrain_stats.get('mean_elevation', 500))
+        actual_slope = terrain_summary.get('mean_slope', slope_analysis.get('mean_slope', 10))
+        actual_flood_risk = terrain_summary.get('flood_risk', flood_analysis.get('flood_stats', {}).get('high_risk_area', 0))
+        actual_erosion_risk = terrain_summary.get('erosion_risk', erosion_analysis.get('erosion_stats', {}).get('mean_soil_loss', 0))
+        
+        mean_elevation = actual_elevation
+        mean_slope = actual_slope
+        max_slope = slope_analysis.get('max_slope', actual_slope * 1.5)
+        flood_risk = actual_flood_risk
+        erosion_risk = actual_erosion_risk
+        
+        if slope_analysis:
+            actual_slope = slope_analysis.get('mean_slope', actual_slope)
+            mean_slope = actual_slope
+            max_slope = slope_analysis.get('max_slope', actual_slope * 1.5)
+        if flood_analysis:
+            flood_stats = flood_analysis.get('flood_stats', {})
+            actual_flood_risk = flood_stats.get('high_risk_area', actual_flood_risk)
+            flood_risk = actual_flood_risk
+        if erosion_analysis:
+            erosion_stats = erosion_analysis.get('erosion_stats', {})
+            actual_erosion_risk = erosion_stats.get('mean_soil_loss', actual_erosion_risk)
+            erosion_risk = actual_erosion_risk
+        
+        logger.info(f"🎯 REAL TERRAIN DATA - Elevation: {actual_elevation}m, Slope: {actual_slope}°, Flood: {actual_flood_risk}%, Erosion: {actual_erosion_risk}")
+        
+        # Calculate polygon area
+        area_sqm, area_acres = calculate_polygon_area(polygon_coords)
+        logger.info(f"📏 CALCULATED AREA: {area_sqm:.0f} sqm = {area_acres:.2f} acres")
+        total_marla = area_sqm / SQM_PER_MARLA
+        
+        # SVG canvas dimensions (in pixels) - larger for better quality
+        svg_width = 2400
+        svg_height = 1800
+        
+        # Create SVG root
+        svg = Element('svg', {
+            'xmlns': 'http://www.w3.org/2000/svg',
+            'width': str(svg_width),
+            'height': str(svg_height),
+            'viewBox': f'0 0 {svg_width} {svg_height}',
+            'style': 'background-color: white;'
+        })
+        
+        # Add defs for patterns and gradients
+        defs = SubElement(svg, 'defs')
+        
+        # Define patterns for different zone types
+        # Park pattern (dots)
+        park_pattern = SubElement(defs, 'pattern', {
+            'id': 'parkPattern',
+            'x': '0', 'y': '0',
+            'width': '10', 'height': '10',
+            'patternUnits': 'userSpaceOnUse'
+        })
+        SubElement(park_pattern, 'circle', {
+            'cx': '5', 'cy': '5', 'r': '2',
+            'fill': '#064e3b', 'opacity': '0.3'
+        })
+        
+        # Scaling for layout (same as PNG version)
+        min_x, min_y = 0, 0
+        max_x, max_y = 18, 9
+        width = max_x - min_x
+        height = max_y - min_y
+        start_y = 0.6
+        
+        # Convert layout coordinates to SVG pixels
+        def layout_to_svg(x, y):
+            svg_x = (x / 15.0) * svg_width * 0.9  # 90% of width for layout
+            svg_y = svg_height - ((y / 11.0) * svg_height * 0.95)  # Invert Y, 95% of height
+            return svg_x, svg_y
+        
+        # Helper to extract marla
+        def extract_marla_from_plot_size(plot_size_str):
+            if isinstance(plot_size_str, str):
+                import re
+                match = re.search(r'(\d+(?:\.\d+)?)\s*MARLA', plot_size_str.upper())
+                if match:
+                    return float(match.group(1))
+            return 0.0
+        
+        # Scale polygon to layout
+        def scale_polygon_to_layout(coords_array, target_width, target_height, offset_x, offset_y, padding_ratio=0.05):
+            if coords_array is None or coords_array.size == 0:
+                return coords_array
+            
+            xs = coords_array[:, 0]
+            ys = coords_array[:, 1]
+            min_geo_x, max_geo_x = xs.min(), xs.max()
+            min_geo_y, max_geo_y = ys.min(), ys.max()
+            
+            geo_width = max_geo_x - min_geo_x
+            geo_height = max_geo_y - min_geo_y
+            if geo_width == 0:
+                geo_width = 1e-6
+            if geo_height == 0:
+                geo_height = 1e-6
+            
+            padding_x = target_width * padding_ratio
+            padding_y = target_height * padding_ratio
+            available_width = max(target_width - 2 * padding_x, 1e-3)
+            available_height = max(target_height - 2 * padding_y, 1e-3)
+            scale = min(available_width / geo_width, available_height / geo_height)
+            
+            scaled_width = geo_width * scale
+            scaled_height = geo_height * scale
+            extra_x = (available_width - scaled_width) / 2
+            extra_y = (available_height - scaled_height) / 2
+            
+            scaled_x = offset_x + padding_x + extra_x + (xs - min_geo_x) * scale
+            scaled_y = offset_y + padding_y + extra_y + (ys - min_geo_y) * scale
+            
+            return np.column_stack((scaled_x, scaled_y))
+        
+        # Marla accounting
+        marla_accounting = {
+            "total_polygon_marla": total_marla,
+            "residential_marla": 0.0,
+            "commercial_marla": 0.0,
+            "park_marla": 0.0,
+            "reserved_marla": 0.0,
+            "roundabout_surface_marla": 0.0,
+            "amenity_counts": {"MOSQUE": 0, "HOSPITAL": 0, "SCHOOL": 0},
+            "total_plots": {"residential": 0, "commercial": 0},
+        }
+        
+        # Scale polygon coordinates
+        polygon_coords_array = np.array(polygon_coords, dtype=float)
+        scaled_polygon_coords = scale_polygon_to_layout(
+            polygon_coords_array,
+            width,
+            height,
+            min_x,
+            start_y
+        )
+        
+        if scaled_polygon_coords is None or len(scaled_polygon_coords) < 3:
+            scaled_polygon_coords = np.array([
+                [min_x, start_y],
+                [min_x + width, start_y],
+                [min_x + width, start_y + height],
+                [min_x, start_y + height]
+            ])
+        
+        # Ensure polygon is closed
+        if scaled_polygon_coords is not None and len(scaled_polygon_coords) > 0:
+            first_point = scaled_polygon_coords[0]
+            last_point = scaled_polygon_coords[-1]
+            if not np.allclose(first_point, last_point, rtol=1e-5, atol=1e-5):
+                scaled_polygon_coords = np.vstack([scaled_polygon_coords, [first_point]])
+        
+        layout_polygon = Polygon(scaled_polygon_coords)
+        layout_polygon_area = layout_polygon.area
+        scale_factor_sq = area_sqm / layout_polygon_area if layout_polygon_area > 0 else 1.0
+        scale_factor = np.sqrt(scale_factor_sq)
+        
+        logger.info(f"📐 AREA CALCULATION:")
+        logger.info(f"   Real-world polygon area: {area_sqm:.2f} sqm ({area_acres:.2f} acres)")
+        logger.info(f"   Layout polygon area: {layout_polygon_area:.4f} layout units²")
+        logger.info(f"   Scale factor: {scale_factor:.4f}")
+        
+        # Determine grid size (same logic as PNG version)
+        logger.info(f"🔍 DETERMINING GRID SIZE for {area_acres:.2f} acres")
+        
+        if area_acres < 1:
+            blocks_per_acre = 6
+            num_blocks = max(4, int(area_acres * blocks_per_acre))
+        elif area_acres < 5:
+            blocks_per_acre = 5
+            num_blocks = max(6, int(area_acres * blocks_per_acre))
+        elif area_acres < 20:
+            blocks_per_acre = 4
+            num_blocks = max(10, int(area_acres * blocks_per_acre))
+        elif area_acres < 50:
+            blocks_per_acre = 3.5
+            num_blocks = max(30, int(area_acres * blocks_per_acre))
+        elif area_acres < 100:
+            blocks_per_acre = 3.0
+            num_blocks = max(60, int(area_acres * blocks_per_acre))
+        elif area_acres < 200:
+            blocks_per_acre = 2.5
+            num_blocks = max(100, int(area_acres * blocks_per_acre))
+        else:
+            blocks_per_acre = 2.0
+            num_blocks = max(160, int(area_acres * blocks_per_acre))
+        
+        num_blocks = min(num_blocks, 500)
+        
+        aspect_ratio = 1.3
+        num_blocks_y = max(3, int(np.sqrt(num_blocks / aspect_ratio)))
+        num_blocks_x = max(3, int(num_blocks / num_blocks_y))
+        
+        while num_blocks_x * num_blocks_y < num_blocks and num_blocks_x * num_blocks_y < 500:
+            if num_blocks_x <= num_blocks_y:
+                num_blocks_x += 1
+            else:
+                num_blocks_y += 1
+        
+        if max_slope > 50 or flood_risk > 0.4:
+            num_blocks_x = max(3, int(num_blocks_x * 0.9))
+            num_blocks_y = max(3, int(num_blocks_y * 0.9))
+        
+        logger.info(f"📐 DYNAMIC GRID: {num_blocks_x}x{num_blocks_y} = {num_blocks_x * num_blocks_y} blocks")
+        
+        block_width = width / num_blocks_x
+        block_height = height / num_blocks_y
+        road_width = min(block_width, block_height) * 0.12
+        
+        # Create CDA layout
+        block_layout = create_dynamic_cda_layout(
+            polygon_coords, num_blocks_x, num_blocks_y,
+            mean_slope, flood_risk, erosion_risk, mean_elevation, area_acres
+        )
+        
+        total_blocks = num_blocks_x * num_blocks_y
+        
+        block_polygons = create_rectangular_blocks(
+            layout_polygon,
+            min_x,
+            start_y,
+            block_width,
+            block_height,
+            num_blocks_x,
+            num_blocks_y
+        )
+        block_types = [zone for row in block_layout for zone in row]
+        
+        # Generate amenities
+        reserved_block_indices = set()
+        amenity_overlays = []
+        amenity_block_map = {}
+        
+        if ENABLE_AMENITY_OVERLAYS:
+            available_blocks = max(1, len(block_polygons) - len(reserved_block_indices))
+            
+            if area_acres < 10:
+                estimated_mosques = 2
+                estimated_schools = 1
+                estimated_hospitals = 1
+            elif area_acres < 25:
+                estimated_mosques = 3
+                estimated_schools = 2
+                estimated_hospitals = 1
+            elif area_acres < 50:
+                estimated_mosques = max(4, int(area_acres / 20))
+                estimated_schools = max(3, int(area_acres / 22))
+                estimated_hospitals = max(2, int(area_acres / 50))
+            elif area_acres < 100:
+                estimated_mosques = max(5, int(area_acres / 18))
+                estimated_schools = max(4, int(area_acres / 20))
+                estimated_hospitals = max(2, int(area_acres / 45))
+            else:
+                estimated_mosques = max(6, int(area_acres / 16))
+                estimated_schools = max(5, int(area_acres / 18))
+                estimated_hospitals = max(3, int(area_acres / 40))
+            
+            estimated_amenities = estimated_mosques + estimated_schools + estimated_hospitals + 2
+            max_amenity_slots = max(3, int(available_blocks * 0.5))
+            estimated_amenities = min(estimated_amenities, max_amenity_slots)
+            
+            amenity_overlays = generate_amenity_overlays(
+                block_polygons,
+                block_types,
+                seed=int(area_sqm + mean_elevation + flood_risk * 1000) % 10000,
+                max_overlays=estimated_amenities,
+                area_acres=area_acres,
+                blocked_indices=reserved_block_indices,
+                num_blocks_x=num_blocks_x,
+                num_blocks_y=num_blocks_y
+            )
+            amenity_block_map = {overlay["block_index"]: overlay for overlay in amenity_overlays}
+        
+        # Colors
+        colors = {
+            'residential': '#FA8072',
+            'commercial': '#FFD700',
+            'park': '#32CD32'
+        }
+        
+        border_colors = {
+            'residential': '#8B4513',
+            'commercial': '#B8860B',
+            'park': '#228B22'
+        }
+        
+        # Draw background polygon
+        polygon_points = ' '.join([f"{layout_to_svg(pt[0], pt[1])[0]},{layout_to_svg(pt[0], pt[1])[1]}" for pt in scaled_polygon_coords])
+        SubElement(svg, 'polygon', {
+            'points': polygon_points,
+            'fill': '#e0f2fe',
+            'fill-opacity': '0.25',
+            'stroke': 'none'
+        })
+        
+        # Create a group for the main layout
+        main_group = SubElement(svg, 'g', {'id': 'main-layout'})
+        
+        # Helper function to draw SVG polygon from shapely geometry
+        def draw_svg_polygon(parent, geometry, fill_color, stroke_color, stroke_width=2, opacity=1.0, fill_opacity=None):
+            if geometry.is_empty:
+                return
+            
+            if isinstance(geometry, MultiPolygon):
+                for geom in geometry.geoms:
+                    draw_svg_polygon(parent, geom, fill_color, stroke_color, stroke_width, opacity, fill_opacity)
+            elif isinstance(geometry, Polygon):
+                coords = list(geometry.exterior.coords)
+                points = ' '.join([f"{layout_to_svg(pt[0], pt[1])[0]},{layout_to_svg(pt[0], pt[1])[1]}" for pt in coords])
+                attrs = {
+                    'points': points,
+                    'fill': fill_color,
+                    'stroke': stroke_color,
+                    'stroke-width': str(stroke_width),
+                    'opacity': str(opacity)
+                }
+                if fill_opacity is not None:
+                    attrs['fill-opacity'] = str(fill_opacity)
+                SubElement(parent, 'polygon', attrs)
+        
+        # Helper to get label point
+        def get_label_point(geometry):
+            try:
+                pt = geometry.representative_point()
+                return pt.x, pt.y
+            except Exception:
+                centroid = geometry.centroid
+                return centroid.x, centroid.y
+        
+        # Draw blocks
+        logger.info(f"🔍 Drawing {len(block_polygons)} blocks")
+        
+        commercial_count = sum(1 for bt in block_types if bt == 'commercial')
+        residential_count = sum(1 for bt in block_types if bt == 'residential')
+        park_count = sum(1 for bt in block_types if bt == 'park')
+        
+        logger.info(f"🔍 Block counts: {residential_count} residential, {commercial_count} commercial, {park_count} parks")
+        
+        # Track area statistics
+        total_residential_area_sqm = 0
+        total_commercial_area_sqm = 0
+        total_park_area_sqm = 0
+        total_amenity_area_sqm = 0
+        
+        for idx, (block_geom, block_type) in enumerate(zip(block_polygons, block_types)):
+            if block_geom.is_empty or idx in reserved_block_indices:
+                continue
+            
+            block_area_layout_sq = block_geom.area
+            block_area_sqm = block_area_layout_sq * scale_factor_sq
+            
+            # Shrink block for road spacing
+            shrink_distance = road_width * 0.6
+            render_geom = block_geom.buffer(-shrink_distance) if shrink_distance > 0 else block_geom
+            if render_geom.is_empty:
+                continue
+            
+            amenity_overlay = amenity_block_map.get(idx)
+            
+            # Determine block color
+            if block_type == 'residential':
+                block_color = colors['residential']
+                if amenity_overlay and not amenity_overlay.get('is_commercial_amenity', False):
+                    block_color = amenity_overlay["color"]
+            elif block_type == 'commercial':
+                block_color = colors['commercial']
+            elif block_type == 'park':
+                render_area_sqm = render_geom.area * scale_factor_sq
+                park_marla = render_area_sqm / SQM_PER_MARLA
+                marla_accounting["park_marla"] += park_marla
+                block_color = colors['park']
+                if amenity_overlay:
+                    block_color = amenity_overlay["color"]
+            else:
+                block_color = '#e5e7eb'
+            
+            # Draw block
+            draw_svg_polygon(
+                main_group,
+                render_geom,
+                block_color,
+                border_colors.get(block_type, '#000000'),
+                stroke_width=3 if block_type == 'commercial' else 2,
+                opacity=0.9 if block_type == 'commercial' else 0.85
+            )
+            
+            # Track areas
+            if idx in amenity_block_map:
+                amenity_geom = amenity_block_map[idx]["geometry"]
+                if hasattr(amenity_geom, 'area'):
+                    amenity_area_sqm = amenity_geom.area * scale_factor_sq
+                else:
+                    amenity_area_sqm = block_area_sqm
+                total_amenity_area_sqm += amenity_area_sqm
+                total_park_area_sqm += amenity_area_sqm
+            elif block_type == 'residential':
+                total_residential_area_sqm += block_area_sqm
+            elif block_type == 'commercial':
+                total_commercial_area_sqm += block_area_sqm
+            elif block_type == 'park':
+                total_park_area_sqm += block_area_sqm
+            
+            # Draw amenity label if present
+            if amenity_overlay:
+                label_x, label_y = get_label_point(render_geom)
+                svg_x, svg_y = layout_to_svg(label_x, label_y)
+                
+                text_elem = SubElement(main_group, 'text', {
+                    'x': str(svg_x),
+                    'y': str(svg_y),
+                    'text-anchor': 'middle',
+                    'dominant-baseline': 'middle',
+                    'font-size': str(label_sizes["block"]),
+                    'font-weight': 'bold',
+                    'fill': amenity_overlay["text"]
+                })
+                text_elem.text = amenity_overlay["label"]
+                
+                # Update amenity counts
+                amenity_name = amenity_overlay["label"].upper()
+                if amenity_name in marla_accounting["amenity_counts"]:
+                    marla_accounting["amenity_counts"][amenity_name] += 1
+            
+            # Draw plots for residential and commercial blocks
+            if not amenity_overlay:
+                if block_type == 'residential':
+                    row = idx // num_blocks_x
+                    col = idx % num_blocks_x
+                    
+                    import random
+                    block_seed = int(area_sqm + row * 100 + col * 50 + mean_slope * 5 + flood_risk * 100) % 10000
+                    random.seed(block_seed)
+                    
+                    # Functions are defined in this file, no import needed
+                    
+                    plot_sizes, _ = get_mixed_plot_sizes(area_acres, 'residential')
+                    if not plot_sizes:
+                        plot_sizes = ['20 MARLA', '15 MARLA', '7 MARLA', '5 MARLA']
+                    
+                    plot_size = random.choice(plot_sizes) if plot_sizes else '5 MARLA'
+                    target_marla = extract_marla_from_plot_size(plot_size)
+                    if target_marla <= 0:
+                        target_marla = 5.0
+                    
+                    rows, cols = determine_plot_grid(render_geom, 'residential', area_acres, total_blocks, plot_size)
+                    
+                    if target_marla in [5.0, 7.0] and rows < 3:
+                        rows = 3
+                        cols = max(2, int((rows * cols) / rows))
+                    
+                    plots = subdivide_block_into_plots(render_geom, rows, cols)
+                    
+                    logger.info(f"Drawing {len(plots)} plots for residential block (rows={rows}, cols={cols})")
+                    
+                    for plot_number, plot_geom in plots:
+                        if plot_geom.is_empty:
+                            continue
+                        
+                        plot_marla = target_marla
+                        marla_accounting["residential_marla"] += plot_marla
+                        marla_accounting["total_plots"]["residential"] += 1
+                        
+                        # Draw plot
+                        draw_svg_polygon(
+                            main_group,
+                            plot_geom,
+                            '#dbeafe',  # Light blue
+                            '#93c5fd',  # Blue border
+                            stroke_width=0.8,
+                            opacity=1.0
+                        )
+                        
+                        # Draw plot number
+                        plot_label_x, plot_label_y = get_label_point(plot_geom)
+                        svg_x, svg_y = layout_to_svg(plot_label_x, plot_label_y)
+                        
+                        plot_fontsize = max(2, min(3, label_sizes["residential_plot"] * 0.4)) if target_marla in [5.0, 7.0] else max(3, min(4, label_sizes["residential_plot"] * 0.6))
+                        
+                        text_elem = SubElement(main_group, 'text', {
+                            'x': str(svg_x),
+                            'y': str(svg_y),
+                            'text-anchor': 'middle',
+                            'dominant-baseline': 'middle',
+                            'font-size': str(plot_fontsize),
+                            'fill': '#1f2937'
+                        })
+                        text_elem.text = str(plot_number)
+                    
+                    # Draw marla label
+                    label_x, label_y = get_label_point(render_geom)
+                    svg_x, svg_y = layout_to_svg(label_x, label_y)
+                    
+                    text_elem = SubElement(main_group, 'text', {
+                        'x': str(svg_x),
+                        'y': str(svg_y),
+                        'text-anchor': 'middle',
+                        'dominant-baseline': 'middle',
+                        'font-size': str(max(5, min(7, label_sizes["residential_plot"]))),
+                        'fill': '#1f2937',
+                        'font-weight': 'normal'
+                    })
+                    text_elem.text = plot_size
+                
+                elif block_type == 'commercial':
+                    row = idx // num_blocks_x
+                    col = idx % num_blocks_x
+                    
+                    import random
+                    commercial_seed = int(area_sqm + row * 200 + col * 75 + mean_slope * 8 + flood_risk * 150) % 10000
+                    random.seed(commercial_seed)
+                    
+                    # Functions are defined in this file, no import needed
+                    
+                    plot_sizes, _ = get_mixed_plot_sizes(area_acres, 'commercial')
+                    if not plot_sizes:
+                        plot_sizes = ['SHOP', 'STORE', 'MALL', 'RETAIL', 'SHOP']
+                    
+                    shop_type = random.choice(plot_sizes) if plot_sizes else 'SHOP'
+                    rows, cols = determine_plot_grid(render_geom, 'commercial', area_acres, total_blocks)
+                    plots = subdivide_block_into_plots(render_geom, rows, cols)
+                    
+                    logger.info(f"Drawing {len(plots)} plots for commercial block (rows={rows}, cols={cols})")
+                    
+                    for plot_number, plot_geom in plots:
+                        if plot_geom.is_empty:
+                            continue
+                        
+                        plot_area_sqm = plot_geom.area * scale_factor_sq
+                        plot_marla = plot_area_sqm / SQM_PER_MARLA
+                        
+                        marla_accounting["commercial_marla"] += plot_marla
+                        marla_accounting["total_plots"]["commercial"] += 1
+                        
+                        # Draw commercial plot
+                        draw_svg_polygon(
+                            main_group,
+                            plot_geom,
+                            colors['commercial'],
+                            '#000000',
+                            stroke_width=2.0,
+                            opacity=1.0
+                        )
+                        
+                        # Draw plot number with background
+                        plot_label_x, plot_label_y = get_label_point(plot_geom)
+                        svg_x, svg_y = layout_to_svg(plot_label_x, plot_label_y)
+                        
+                        # Background rect for number
+                        rect_size = 20
+                        SubElement(main_group, 'rect', {
+                            'x': str(svg_x - rect_size/2),
+                            'y': str(svg_y - rect_size/2),
+                            'width': str(rect_size),
+                            'height': str(rect_size),
+                            'fill': 'white',
+                            'stroke': 'black',
+                            'stroke-width': '0.5',
+                            'rx': '3',
+                            'opacity': '0.9'
+                        })
+                        
+                        text_elem = SubElement(main_group, 'text', {
+                            'x': str(svg_x),
+                            'y': str(svg_y),
+                            'text-anchor': 'middle',
+                            'dominant-baseline': 'middle',
+                            'font-size': str(max(9, label_sizes["commercial_plot"])),
+                            'font-weight': 'bold',
+                            'fill': '#000000'
+                        })
+                        text_elem.text = str(plot_number)
+                
+                elif block_type == 'park':
+                    # Draw park with pattern
+                    draw_svg_polygon(
+                        main_group,
+                        render_geom,
+                        '#bbf7d0',
+                        '#064e3b',
+                        stroke_width=1,
+                        opacity=0.9
+                    )
+                    
+                    # Park label
+                    center_x, center_y = get_label_point(block_geom)
+                    svg_x, svg_y = layout_to_svg(center_x, center_y)
+                    
+                    # Background for text
+                    rect_size = 60
+                    SubElement(main_group, 'rect', {
+                        'x': str(svg_x - rect_size/2),
+                        'y': str(svg_y - rect_size/4),
+                        'width': str(rect_size),
+                        'height': str(rect_size/2),
+                        'fill': 'black',
+                        'opacity': '0.3',
+                        'rx': '5',
+                        'stroke': 'white',
+                        'stroke-width': '1.5'
+                    })
+                    
+                    text_elem = SubElement(main_group, 'text', {
+                        'x': str(svg_x),
+                        'y': str(svg_y),
+                        'text-anchor': 'middle',
+                        'dominant-baseline': 'middle',
+                        'font-size': str(label_sizes["park"]),
+                        'font-weight': 'bold',
+                        'fill': 'white'
+                    })
+                    text_elem.text = "PARK"
+        
+        # Draw boundary
+        boundary_points = ' '.join([f"{layout_to_svg(pt[0], pt[1])[0]},{layout_to_svg(pt[0], pt[1])[1]}" for pt in scaled_polygon_coords])
+        SubElement(svg, 'polyline', {
+            'points': boundary_points,
+            'fill': 'none',
+            'stroke': '#0369a1',
+            'stroke-width': '3',
+            'stroke-linecap': 'round',
+            'stroke-linejoin': 'round'
+        })
+        
+        # Calculate area percentages
+        total_zoned_area_sqm = total_residential_area_sqm + total_commercial_area_sqm + total_park_area_sqm
+        residential_percentage = (total_residential_area_sqm / area_sqm * 100) if area_sqm > 0 else 0
+        commercial_percentage = (total_commercial_area_sqm / area_sqm * 100) if area_sqm > 0 else 0
+        green_percentage = (total_park_area_sqm / area_sqm * 100) if area_sqm > 0 else 0
+        
+        logger.info(f"📊 SVG AREA DISTRIBUTION: Residential {residential_percentage:.1f}%, Commercial {commercial_percentage:.1f}%, Green {green_percentage:.1f}%")
+        
+        # Add marla summary to zoning_data
+        accounted_marla = (
+            marla_accounting["residential_marla"]
+            + marla_accounting["commercial_marla"]
+            + marla_accounting["park_marla"]
+            + marla_accounting["reserved_marla"]
+        )
+        marla_accounting["accounted_marla"] = accounted_marla
+        marla_accounting["roads_marla_estimate"] = max(total_marla - accounted_marla, 0)
+        marla_accounting["area_distribution"] = {
+            "residential_percentage": round(residential_percentage, 1),
+            "commercial_percentage": round(commercial_percentage, 1),
+            "green_percentage": round(green_percentage, 1),
+            "park_percentage": round((total_park_area_sqm - total_amenity_area_sqm) / area_sqm * 100, 1) if area_sqm > 0 else 0,
+            "amenity_percentage": round(total_amenity_area_sqm / area_sqm * 100, 1) if area_sqm > 0 else 0,
+            "total_zoned_percentage": round(total_zoned_area_sqm / area_sqm * 100, 1) if area_sqm > 0 else 0,
+            "cda_compliance": {
+                "residential_target": 50.0,
+                "commercial_target": 30.0,
+                "green_target": 20.0
+            }
+        }
+        
+        zoning_data["marla_summary"] = marla_accounting
+        logger.info(f"📊 Marla accounting: {json.dumps(marla_accounting, default=float)}")
+        
+        # Add green space statistics
+        park_block_count = sum(1 for bt in block_types if bt == 'park')
+        amenity_count = len(amenity_block_map)
+        
+        zoning_data["green_space_statistics"] = {
+            "park_block_count": park_block_count,
+            "amenity_count": amenity_count,
+            "total_green_space_count": park_block_count + amenity_count,
+            "total_park_area_sqm": round(total_park_area_sqm, 2),
+            "total_park_area_hectares": round(total_park_area_sqm / 10000, 4),
+            "total_amenity_area_sqm": round(total_amenity_area_sqm, 2),
+            "green_space_percentage": round(green_percentage, 2),
+            "amenity_counts": marla_accounting.get("amenity_counts", {}),
+            "park_marla": marla_accounting.get("park_marla", 0)
+        }
+        
+        logger.info(f"🌳 Green Space Statistics: {park_block_count} parks, {amenity_count} amenities, {total_park_area_sqm:.2f} sqm")
+        
+        # Add title
+        layout_center_x = min_x + width / 2
+        title_svg_x, title_svg_y = layout_to_svg(layout_center_x, 13.5)
+        
+        name_seed = int(area_sqm + mean_elevation + polygon_coords[0][0] * 100) % 4
+        society_names = ['CDA HILLSIDE GARDENS', 'CDA RIVERSIDE GARDENS', 'CDA TERRACE GARDENS', 'CDA SUNSET GARDENS']
+        society_name = society_names[name_seed]
+        
+        # Title background
+        title_width = 400
+        title_height = 50
+        SubElement(svg, 'rect', {
+            'x': str(title_svg_x - title_width/2),
+            'y': str(title_svg_y - title_height/2),
+            'width': str(title_width),
+            'height': str(title_height),
+            'fill': '#e0f2fe',
+            'stroke': 'black',
+            'stroke-width': '2',
+            'rx': '10'
+        })
+        
+        title_text = SubElement(svg, 'text', {
+            'x': str(title_svg_x),
+            'y': str(title_svg_y),
+            'text-anchor': 'middle',
+            'dominant-baseline': 'middle',
+            'font-size': str(label_sizes["title"]),
+            'font-weight': 'bold',
+            'fill': 'black'
+        })
+        title_text.text = society_name
+        
+        # Subtitle
+        district_seed = int(area_sqm + mean_slope + polygon_coords[0][1] * 100) % 4
+        district_types = ['CDA FLOOD-RESISTANT ZONE', 'CDA TERRACED ZONE', 'CDA HILLSIDE ZONE', 'CDA RESIDENTIAL ZONE']
+        district_type = district_types[district_seed]
+        
+        subtitle_svg_x, subtitle_svg_y = layout_to_svg(layout_center_x, 12.8)
+        
+        subtitle_width = 350
+        subtitle_height = 40
+        SubElement(svg, 'rect', {
+            'x': str(subtitle_svg_x - subtitle_width/2),
+            'y': str(subtitle_svg_y - subtitle_height/2),
+            'width': str(subtitle_width),
+            'height': str(subtitle_height),
+            'fill': '#e0f2fe',
+            'stroke': 'black',
+            'stroke-width': '2',
+            'rx': '8'
+        })
+        
+        subtitle_text = SubElement(svg, 'text', {
+            'x': str(subtitle_svg_x),
+            'y': str(subtitle_svg_y),
+            'text-anchor': 'middle',
+            'dominant-baseline': 'middle',
+            'font-size': str(label_sizes["subtitle"]),
+            'font-weight': 'bold',
+            'fill': 'black'
+        })
+        subtitle_text.text = district_type
+        
+        # Terrain info bar
+        terrain_text = f'Total: {area_sqm:.0f} sqm ({area_acres:.2f} acres) | Elevation: {actual_elevation:.0f}m | Slope: {actual_slope:.1f}° | Flood: {actual_flood_risk:.1f}% | Erosion: {actual_erosion_risk:.2f}'
+        
+        if actual_slope > 55:
+            terrain_text += ' | ⚠️ EXTREME SLOPE - Leveling Required'
+            terrain_bg_color = '#991b1b'
+        elif actual_slope > 50:
+            terrain_text += ' | ⚠️ VERY STEEP - Leveling Required'
+            terrain_bg_color = '#dc2626'
+        elif actual_slope > 35:
+            terrain_text += ' | ⚠️ STEEP - Leveling Recommended'
+            terrain_bg_color = '#f59e0b'
+        else:
+            terrain_bg_color = '#10b981'
+        
+        terrain_svg_x, terrain_svg_y = layout_to_svg(layout_center_x, 12.1)
+        
+        terrain_width = 800
+        terrain_height = 35
+        SubElement(svg, 'rect', {
+            'x': str(terrain_svg_x - terrain_width/2),
+            'y': str(terrain_svg_y - terrain_height/2),
+            'width': str(terrain_width),
+            'height': str(terrain_height),
+            'fill': terrain_bg_color,
+            'stroke': '#059669',
+            'stroke-width': '2',
+            'rx': '8'
+        })
+        
+        terrain_text_elem = SubElement(svg, 'text', {
+            'x': str(terrain_svg_x),
+            'y': str(terrain_svg_y),
+            'text-anchor': 'middle',
+            'dominant-baseline': 'middle',
+            'font-size': str(label_sizes["terrain"]),
+            'font-weight': 'bold',
+            'fill': 'white'
+        })
+        terrain_text_elem.text = terrain_text
+        
+        # Add legend
+        legend_x_layout = max_x + 1.2
+        legend_y_layout = 6
+        legend_svg_x, legend_svg_y = layout_to_svg(legend_x_layout, legend_y_layout)
+        
+        legend_width = 250
+        legend_height = 150
+        SubElement(svg, 'rect', {
+            'x': str(legend_svg_x),
+            'y': str(legend_svg_y - legend_height),
+            'width': str(legend_width),
+            'height': str(legend_height),
+            'fill': '#e0f2fe',
+            'stroke': 'black',
+            'stroke-width': '3',
+            'opacity': '0.98'
+        })
+        
+        legend_title = SubElement(svg, 'text', {
+            'x': str(legend_svg_x + legend_width/2),
+            'y': str(legend_svg_y - legend_height + 25),
+            'text-anchor': 'middle',
+            'font-size': str(label_sizes["legend_title"]),
+            'font-weight': 'bold',
+            'fill': '#374151'
+        })
+        legend_title.text = "LEGEND"
+        
+        legend_items = [
+            ('Residential Blocks', '#dbeafe', 'black'),
+            ('Commercial Blocks', '#fef3c7', 'black'),
+            ('Green Spaces', '#d1fae5', 'black'),
+            ('Road Network', '#9ca3af', 'black')
+        ]
+        
+        for i, (label, color, border) in enumerate(legend_items):
+            y_pos = legend_svg_y - legend_height + 50 + i * 30
+            
+            SubElement(svg, 'rect', {
+                'x': str(legend_svg_x + 10),
+                'y': str(y_pos - 10),
+                'width': '20',
+                'height': '20',
+                'fill': color,
+                'stroke': border,
+                'stroke-width': '2'
+            })
+            
+            legend_item_text = SubElement(svg, 'text', {
+                'x': str(legend_svg_x + 40),
+                'y': str(y_pos),
+                'text-anchor': 'start',
+                'dominant-baseline': 'middle',
+                'font-size': str(label_sizes["legend_item"]),
+                'font-weight': 'bold',
+                'fill': '#374151'
+            })
+            legend_item_text.text = label
+        
+        # Add north arrow
+        north_x_layout = max_x + 2.5
+        north_y_layout = 13
+        north_svg_x, north_svg_y = layout_to_svg(north_x_layout, north_y_layout)
+        
+        # Arrow
+        SubElement(svg, 'line', {
+            'x1': str(north_svg_x),
+            'y1': str(north_svg_y + 30),
+            'x2': str(north_svg_x),
+            'y2': str(north_svg_y - 30),
+            'stroke': 'black',
+            'stroke-width': '3',
+            'marker-end': 'url(#arrow)'
+        })
+        
+        # Arrow marker
+        marker = SubElement(defs, 'marker', {
+            'id': 'arrow',
+            'markerWidth': '10',
+            'markerHeight': '10',
+            'refX': '5',
+            'refY': '3',
+            'orient': 'auto',
+            'markerUnits': 'strokeWidth'
+        })
+        SubElement(marker, 'path', {
+            'd': 'M0,0 L0,6 L9,3 z',
+            'fill': 'black'
+        })
+        
+        # N background
+        SubElement(svg, 'rect', {
+            'x': str(north_svg_x - 15),
+            'y': str(north_svg_y - 15),
+            'width': '30',
+            'height': '30',
+            'fill': '#e0f2fe',
+            'stroke': 'black',
+            'stroke-width': '1.5',
+            'rx': '5'
+        })
+        
+        north_text = SubElement(svg, 'text', {
+            'x': str(north_svg_x),
+            'y': str(north_svg_y),
+            'text-anchor': 'middle',
+            'dominant-baseline': 'middle',
+            'font-size': str(label_sizes["north"]),
+            'font-weight': 'bold',
+            'fill': 'black'
+        })
+        north_text.text = "N"
+        
+        # Add branding
+        polygon_id = zoning_data.get('polygon_id', 'N/A')
+        branding_svg_x, branding_svg_y = layout_to_svg(14, 0.5)
+        
+        branding_text = SubElement(svg, 'text', {
+            'x': str(branding_svg_x),
+            'y': str(branding_svg_y),
+            'text-anchor': 'end',
+            'font-size': str(label_sizes["branding"]),
+            'font-style': 'italic',
+            'fill': 'black',
+            'opacity': '0.7'
+        })
+        branding_text.text = "Powered by Plan-It AI"
+        
+        polygon_info_svg_x, polygon_info_svg_y = layout_to_svg(0.5, 0.5)
+        
+        polygon_info_text = SubElement(svg, 'text', {
+            'x': str(polygon_info_svg_x),
+            'y': str(polygon_info_svg_y),
+            'text-anchor': 'start',
+            'font-size': str(label_sizes["branding"]),
+            'font-style': 'italic',
+            'fill': '#4b5563',
+            'opacity': '0.7'
+        })
+        polygon_info_text.text = f"Based on user-marked polygon (ID #{polygon_id})"
+        
+        # Convert to string
+        rough_string = tostring(svg, encoding='unicode')
+        reparsed = minidom.parseString(rough_string.encode('utf-8'))
+        pretty_svg = reparsed.toprettyxml(indent="  ")
+        
+        # Remove XML declaration for cleaner output
+        pretty_svg = '\n'.join([line for line in pretty_svg.split('\n') if not line.strip().startswith('<?xml')])
+        
+        # Save SVG
+        if output_path is None:
+            timestamp = int(time.time())
+            polygon_id = zoning_data.get('polygon_id', 'unknown')
+            # Use absolute path to ensure we save in the correct output directory
+            import os
+            # Get the parent directory (python/) from current app/ directory
+            python_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            output_dir = os.path.join(python_dir, 'output')
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, f"zameen_style_society_polygon_{polygon_id}_{timestamp}.svg")
+        else:
+            import os
+            os.makedirs(os.path.dirname(output_path) if os.path.dirname(output_path) else 'output', exist_ok=True)
+        
+        logger.info(f"📁 Saving SVG to: {output_path}")
+        
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(pretty_svg)
+        
+        # Verify file was created
+        import os
+        if os.path.exists(output_path):
+            file_size = os.path.getsize(output_path)
+            logger.info(f"✅ Created BEAUTIFUL SVG Zameen.com style layout: {output_path} ({file_size} bytes)")
+            # Return relative path for URL
+            return f"output/{os.path.basename(output_path)}"
+        else:
+            logger.error(f"❌ SVG file was NOT created: {output_path}")
+            return None
+        
+    except Exception as e:
+        logger.error(f"❌ Error creating SVG layout: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return None
+
+
 @app.post("/api/land_subdivision")
 async def land_subdivision(request: Request):
     """
@@ -11878,8 +12883,12 @@ async def intelligent_zoning(request: Request):
         # Calculate actual polygon area for response
         area_sqm, area_acres = calculate_polygon_area(polygon_coords)
         
-        # Call the Zameen.com style visualization function
-        visualization_path = create_2d_zoning_visualization(polygon_coords, zoning_data)
+        # Call the Zameen.com style visualization function (SVG format)
+        visualization_path_svg = create_2d_zoning_visualization_svg(polygon_coords, zoning_data)
+        visualization_path_png = create_2d_zoning_visualization(polygon_coords, zoning_data)
+        
+        # Prefer SVG, fallback to PNG
+        visualization_path = visualization_path_svg or visualization_path_png
         
         if visualization_path:
             # Get just the filename from the full path
@@ -12774,6 +13783,772 @@ async def list_reports():
     except Exception as e:
         logger.error(f"Error listing reports: {str(e)}")
         return JSONResponse({"error": f"Failed to list reports: {str(e)}"}, status_code=500)
+
+@app.post("/api/generate_zoning_svg")
+async def generate_zoning_svg(request: Request):
+    """
+    Generate intelligent zoning with SVG output and user-defined percentages.
+    Considers terrain analysis data to restrict development in unsuitable areas.
+    
+    Body JSON:
+    {
+        "polygon_id": 123,
+        "percentages": {
+            "residential": 40,
+            "commercial": 20,
+            "green_space": 15,
+            "roads": 15,
+            "industrial": 10
+        },
+        "project_id": 456,
+        "user_id": 789,
+        "consider_terrain": true,
+        "output_format": "svg"
+    }
+    """
+    try:
+        payload = await request.json()
+        
+        polygon_id = payload.get('polygon_id')
+        percentages = payload.get('percentages', {})
+        project_id = payload.get('project_id')
+        user_id = payload.get('user_id')
+        consider_terrain = payload.get('consider_terrain', True)
+        output_format = payload.get('output_format', 'svg')
+        layout_mode = payload.get('layout_mode', 'simple')  # 'simple' or 'society'
+        society_layout_type = payload.get('society_layout_type', 'grid')  # 'grid', 'organic', 'radial', 'cluster'
+        
+        if not polygon_id:
+            return JSONResponse({"error": "polygon_id is required"}, status_code=400)
+        
+        # Validate percentages sum to 100
+        total_percentage = sum(percentages.values())
+        if abs(total_percentage - 100) > 1:
+            return JSONResponse({
+                "error": f"Percentages must sum to 100. Current total: {total_percentage}%"
+            }, status_code=400)
+        
+        logger.info(f"🎨 Generating SVG zoning for polygon {polygon_id} with percentages: {percentages}")
+        logger.info(f"🏗️ Layout mode: {layout_mode}, Society type: {society_layout_type if layout_mode == 'society' else 'N/A'}")
+        
+        # Get polygon geometry from database
+        polygon_geojson = None
+        terrain_data = None
+        
+        try:
+            import psycopg2
+            from psycopg2.extras import RealDictCursor
+            
+            conn = psycopg2.connect(
+                dbname=os.getenv("DB_NAME", "plan-it"),
+                user=os.getenv("DB_USER", "postgres"),
+                password=os.getenv("DB_PASSWORD", "iampro24"),
+                host=os.getenv("DB_HOST", "localhost"),
+                port=os.getenv("DB_PORT", "5432")
+            )
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Get polygon geometry
+            cur.execute("SELECT geojson FROM polygons WHERE id = %s", (polygon_id,))
+            polygon_result = cur.fetchone()
+            
+            if not polygon_result:
+                cur.close()
+                conn.close()
+                logger.error(f"❌ Polygon {polygon_id} not found in database")
+                return JSONResponse({"error": f"Polygon {polygon_id} not found"}, status_code=404)
+            
+            polygon_geojson = polygon_result.get('geojson')
+            if not polygon_geojson:
+                cur.close()
+                conn.close()
+                logger.error(f"❌ Polygon {polygon_id} has no geometry data")
+                return JSONResponse({"error": f"Polygon {polygon_id} has no geometry data"}, status_code=400)
+            
+            logger.info(f"✅ Retrieved polygon geometry for ID {polygon_id}")
+            logger.info(f"🔍 Polygon GeoJSON type: {type(polygon_geojson)}, keys: {list(polygon_geojson.keys()) if isinstance(polygon_geojson, dict) else 'Not a dict'}")
+            
+            # Get terrain analysis if requested
+            if consider_terrain:
+                cur.execute("""
+                    SELECT results FROM terrain_analyses 
+                    WHERE polygon_id = %s 
+                    ORDER BY created_at DESC 
+                    LIMIT 1
+                """, (polygon_id,))
+                
+                terrain_result = cur.fetchone()
+                if terrain_result:
+                    terrain_data = terrain_result['results']
+                    logger.info(f"✅ Retrieved terrain analysis for polygon {polygon_id}")
+                else:
+                    logger.warning(f"⚠️ No terrain analysis found for polygon {polygon_id}")
+            
+            cur.close()
+            conn.close()
+            
+        except Exception as db_error:
+            logger.error(f"❌ Database error: {db_error}")
+            return JSONResponse({"error": f"Database error: {str(db_error)}"}, status_code=500)
+        
+        # Extract polygon coordinates - handle both Feature and Geometry formats
+        polygon_coords = None
+        if polygon_geojson:
+            # Check if it's a Feature with geometry
+            if polygon_geojson.get('type') == 'Feature' and 'geometry' in polygon_geojson:
+                geometry = polygon_geojson['geometry']
+                if geometry and geometry.get('type') == 'Polygon' and 'coordinates' in geometry:
+                    coords = geometry['coordinates']
+                    if isinstance(coords, list) and len(coords) > 0:
+                        polygon_coords = coords[0]  # Outer ring
+            # Check if it's directly a Polygon geometry
+            elif polygon_geojson.get('type') == 'Polygon' and 'coordinates' in polygon_geojson:
+                coords = polygon_geojson['coordinates']
+                if isinstance(coords, list) and len(coords) > 0:
+                    polygon_coords = coords[0]  # Outer ring
+        
+        if not polygon_coords:
+            return JSONResponse({
+                "error": "No valid polygon coordinates found",
+                "details": "GeoJSON must be either a Feature with Polygon geometry or a Polygon geometry"
+            }, status_code=400)
+        
+        # Create Shapely polygon for area calculations
+        shapely_polygon = Polygon(polygon_coords)
+        total_area_sqm = calculate_polygon_area_sqm(shapely_polygon)
+        
+        logger.info(f"📏 Total polygon area: {total_area_sqm:.2f} sqm")
+        
+        # Identify restricted areas from terrain analysis
+        restricted_zones = []
+        if terrain_data and consider_terrain:
+            logger.info("🔍 Analyzing terrain restrictions...")
+            
+            # Check for flood risk
+            flood_analysis = terrain_data.get('flood_analysis') or {}
+            risk_stats = flood_analysis.get('risk_statistics') or {}
+            high_risk_percent = risk_stats.get('high_risk_area_percent', 0)
+            if high_risk_percent and high_risk_percent > 15:
+                restricted_zones.append({
+                    'type': 'flood_risk',
+                    'severity': 'high',
+                    'percentage': high_risk_percent
+                })
+                logger.warning(f"⚠️ High flood risk: {high_risk_percent:.1f}%")
+            
+            # Check for steep slopes
+            slope_analysis = terrain_data.get('slope_analysis') or {}
+            max_slope = slope_analysis.get('max_slope', 0)
+            if max_slope and max_slope > 30:
+                restricted_zones.append({
+                    'type': 'steep_slope',
+                    'severity': 'high',
+                    'max_slope': max_slope
+                })
+                logger.warning(f"⚠️ Steep slopes detected: max {max_slope:.1f}°")
+            
+            # Check for erosion risk
+            erosion_analysis = terrain_data.get('erosion_analysis') or {}
+            soil_loss_data = erosion_analysis.get('annual_soil_loss') or {}
+            mean_soil_loss = soil_loss_data.get('mean', 0)
+            if mean_soil_loss and mean_soil_loss > 20:
+                restricted_zones.append({
+                    'type': 'erosion_risk',
+                    'severity': 'high',
+                    'soil_loss': mean_soil_loss
+                })
+                logger.warning(f"⚠️ High erosion risk: {mean_soil_loss:.1f} t/ha/year")
+        
+        # Generate SVG-based zoning map
+        society_layout_data = None
+        
+        if layout_mode == 'society':
+            # Phase 4: Generate detailed society layout
+            try:
+                from society_layout import generate_society_layout_dict
+                
+                logger.info(f"🏘️ Generating detailed society layout with {society_layout_type} pattern")
+                society_layout_data = generate_society_layout_dict(
+                    polygon_coords=polygon_coords,
+                    percentages=percentages,
+                    terrain_data=terrain_data,
+                    layout_type=society_layout_type
+                )
+                
+                # Generate enhanced SVG with society details
+                svg_content = generate_society_layout_svg(
+                    polygon_coords=polygon_coords,
+                    society_layout=society_layout_data,
+                    percentages=percentages,
+                    restricted_zones=restricted_zones,
+                    polygon_id=polygon_id
+                )
+                
+                logger.info(f"✅ Generated society layout with {society_layout_data['statistics']['total_plots']} plots")
+                
+            except Exception as e:
+                logger.error(f"❌ Error generating society layout: {e}")
+                logger.info("⚠️ Falling back to simple zoning mode")
+                # Fallback to simple mode
+                svg_content = generate_layered_zoning_svg(
+                    polygon_coords=polygon_coords,
+                    percentages=percentages,
+                    restricted_zones=restricted_zones,
+                    polygon_id=polygon_id
+                )
+        else:
+            # Simple mode: Original simple colored zones
+            svg_content = generate_layered_zoning_svg(
+                polygon_coords=polygon_coords,
+                percentages=percentages,
+                restricted_zones=restricted_zones,
+                polygon_id=polygon_id
+            )
+        
+        # Calculate zone areas
+        zone_statistics = {}
+        for zone_type, percentage in percentages.items():
+            zone_area_sqm = (percentage / 100.0) * total_area_sqm
+            zone_area_marlas = zone_area_sqm / SQM_PER_MARLA
+            zone_statistics[zone_type] = {
+                'percentage': percentage,
+                'area_sqm': round(zone_area_sqm, 2),
+                'area_marlas': round(zone_area_marlas, 2)
+            }
+        
+        # Prepare response
+        result = {
+            "success": True,
+            "polygon_id": polygon_id,
+            "svg_data": svg_content,
+            "layout_mode": layout_mode,
+            "statistics": {
+                "total_area_sqm": round(total_area_sqm, 2),
+                "total_area_marlas": round(total_area_sqm / SQM_PER_MARLA, 2),
+                "zones": zone_statistics,
+                "restricted_zones": restricted_zones
+            },
+            "layers": list(percentages.keys()) + ["water_bodies", "restricted_areas"],
+            "output_format": output_format
+        }
+        
+        # Add society layout data if in society mode
+        if layout_mode == 'society' and society_layout_data:
+            result["society_layout"] = {
+                "sectors": society_layout_data.get('sectors', []),
+                "plots_count": society_layout_data['statistics']['total_plots'],
+                "amenities": society_layout_data.get('amenities', []),
+                "statistics": society_layout_data['statistics'],
+                "layout_type": society_layout_type
+            }
+        
+        # Save to database
+        try:
+            conn = psycopg2.connect(
+                dbname=os.getenv("DB_NAME", "plan-it"),
+                user=os.getenv("DB_USER", "postgres"),
+                password=os.getenv("DB_PASSWORD", "iampro24"),
+                host=os.getenv("DB_HOST", "localhost"),
+                port=os.getenv("DB_PORT", "5432")
+            )
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Check if zoning result exists
+            cur.execute("""
+                SELECT id FROM zoning_results 
+                WHERE polygon_id = %s AND zoning_type = 'custom_svg'
+                ORDER BY created_at DESC 
+                LIMIT 1
+            """, (polygon_id,))
+            
+            existing = cur.fetchone()
+            
+            if existing:
+                # Update existing
+                cur.execute("""
+                    UPDATE zoning_results 
+                    SET zoning_result = %s,
+                        analysis_parameters = %s,
+                        status = 'completed',
+                        updated_at = NOW()
+                    WHERE id = %s
+                """, (
+                    json.dumps(result),
+                    json.dumps({"percentages": percentages, "consider_terrain": consider_terrain}),
+                    existing['id']
+                ))
+                logger.info(f"✅ Updated SVG zoning result for polygon {polygon_id}")
+            else:
+                # Insert new
+                cur.execute("""
+                    INSERT INTO zoning_results 
+                    (polygon_id, project_id, user_id, zoning_type, zoning_result, analysis_parameters, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    polygon_id,
+                    project_id,
+                    user_id,
+                    'custom_svg',
+                    json.dumps(result),
+                    json.dumps({"percentages": percentages, "consider_terrain": consider_terrain}),
+                    'completed'
+                ))
+                logger.info(f"✅ Saved new SVG zoning result for polygon {polygon_id}")
+            
+            conn.commit()
+            cur.close()
+            conn.close()
+            
+        except Exception as db_error:
+            logger.warning(f"Could not save to database: {db_error}")
+            # Continue even if save fails
+        
+        return JSONResponse(result)
+        
+    except Exception as e:
+        logger.error(f"❌ SVG zoning generation error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+def calculate_polygon_area_sqm(polygon):
+    """Calculate polygon area in square meters using Shapely"""
+    # For lat/lon coordinates, we need to use a projected CRS
+    # Simple approximation: 1 degree ≈ 111km at equator
+    from shapely.ops import transform
+    from functools import partial
+    import pyproj
+    
+    # Get centroid to determine appropriate UTM zone
+    centroid = polygon.centroid
+    lon, lat = centroid.x, centroid.y
+    
+    # Determine UTM zone
+    utm_zone = int((lon + 180) / 6) + 1
+    utm_crs = f"+proj=utm +zone={utm_zone} +datum=WGS84 +units=m +no_defs"
+    
+    # Create transformer
+    project = partial(
+        pyproj.transform,
+        pyproj.Proj('+proj=longlat +datum=WGS84'),
+        pyproj.Proj(utm_crs)
+    )
+    
+    # Transform and calculate area
+    try:
+        projected_polygon = transform(project, polygon)
+        return projected_polygon.area
+    except:
+        # Fallback: simple calculation (less accurate)
+        return polygon.area * 111000 * 111000  # Rough approximation
+
+def generate_society_layout_svg(polygon_coords, society_layout, percentages, restricted_zones, polygon_id):
+    """
+    Phase 4: Generate detailed society layout SVG with sectors, plots, and amenities.
+    """
+    # Calculate bounds
+    lons = [coord[0] for coord in polygon_coords]
+    lats = [coord[1] for coord in polygon_coords]
+    min_lon, max_lon = min(lons), max(lons)
+    min_lat, max_lat = min(lats), max(lats)
+    
+    # Fixed large canvas size for detailed plots
+    svg_width = 2000
+    svg_height = 2000
+    
+    # SVG header
+    svg_parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{svg_width}" height="{svg_height}" viewBox="0 0 {svg_width} {svg_height}">',
+        '<defs>',
+        '  <style>',
+        '    .sector-boundary { fill: rgba(200,200,200,0.1); stroke: #666; stroke-width: 4; stroke-dasharray: 15,10; }',
+        '    .plot { stroke: #1f2937; stroke-width: 1; }',
+        '    .plot-residential { fill: #93c5fd; opacity: 0.8; }',
+        '    .plot-commercial { fill: #c4b5fd; opacity: 0.8; }',
+        '    .plot:hover { stroke: #000; stroke-width: 2; opacity: 1; }',
+        '    .road { fill: #6b7280; stroke: #4b5563; stroke-width: 2; }',
+        '    .road-main { fill: #374151; stroke: #1f2937; stroke-width: 4; }',
+        '    .amenity { opacity: 0.95; stroke: #1f2937; stroke-width: 2; }',
+        '    .amenity-mosque { fill: #22c55e; }',
+        '    .amenity-park { fill: #86efac; }',
+        '    .amenity-school { fill: #fbbf24; }',
+        '    .amenity-commercial_plaza { fill: #c4b5fd; }',
+        '    .amenity-hospital { fill: #ef4444; }',
+        '    .amenity-community_center { fill: #60a5fa; }',
+        '    .plot-label { font-size: 6px; fill: #1f2937; text-anchor: middle; font-family: Arial, sans-serif; }',
+        '    .sector-label { font-size: 48px; font-weight: bold; fill: #1f2937; fill-opacity: 0.3; text-anchor: middle; font-family: Arial, sans-serif; }',
+        '    .amenity-label { font-size: 24px; fill: #1f2937; text-anchor: middle; font-family: Arial, sans-serif; }',
+        '  </style>',
+        '</defs>',
+        '<rect width="100%" height="100%" fill="#f3f4f6"/>',  # Background
+    ]
+    
+    # Log total plots for debugging
+    total_plots = len(society_layout.get('plots', []))
+    logger.info(f"🎨 Rendering {total_plots} plots in SVG")
+    
+    def transform_coord(lon, lat):
+        """Transform lon/lat to SVG coordinates"""
+        x = ((lon - min_lon) / (max_lon - min_lon)) * svg_width
+        y = svg_height - ((lat - min_lat) / (max_lat - min_lat)) * svg_height
+        return x, y
+    
+    # Add title
+    total_plots_count = len(society_layout.get('plots', []))
+    total_sectors_count = len(society_layout.get('sectors', []))
+    svg_parts.append(f'  <text x="{svg_width/2}" y="40" font-size="32" font-weight="bold" fill="#1f2937" text-anchor="middle">')
+    svg_parts.append(f'    Society Layout: {total_sectors_count} Sectors • {total_plots_count} Plots')
+    svg_parts.append('  </text>')
+    
+    # Draw roads first (background layer)
+    svg_parts.append('  <g id="layer_roads">')
+    for road in society_layout.get('roads', []):
+        road_coords = road.get('coordinates', [])
+        road_type = road.get('type', 'sector_road')
+        if len(road_coords) >= 2:
+            points = [transform_coord(c[0], c[1]) for c in road_coords]
+            path_d = f"M {points[0][0]},{points[0][1]} " + " ".join([f"L {p[0]},{p[1]}" for p in points[1:]])
+            road_width = road.get('width', 10) * 5  # Increase scale for visibility
+            road_class = 'road-main' if road_type == 'main_boulevard' else 'road'
+            svg_parts.append(f'    <path d="{path_d}" class="{road_class}" stroke-width="{road_width}"/>')
+    svg_parts.append('  </g>')
+    
+    # Draw sectors
+    svg_parts.append('  <g id="layer_sectors">')
+    sectors = society_layout.get('sectors', [])
+    logger.info(f"🏘️ Rendering {len(sectors)} sectors")
+    
+    for sector in sectors:
+        sector_coords = sector.get('coordinates', [])
+        if sector_coords and len(sector_coords) >= 3:
+            points = [transform_coord(c[0], c[1]) for c in sector_coords]
+            points_str = " ".join([f"{p[0]},{p[1]}" for p in points])
+            sector_id = sector.get('id', 'X')
+            svg_parts.append(f'    <polygon points="{points_str}" class="sector-boundary"><title>Sector {sector_id}</title></polygon>')
+            
+            # Sector label (large, semi-transparent background text)
+            center = sector.get('center', (0, 0))
+            cx, cy = transform_coord(center[0], center[1])
+            svg_parts.append(f'    <text x="{cx}" y="{cy}" class="sector-label">{sector_id}</text>')
+    
+    svg_parts.append('  </g>')
+    logger.info(f"✅ Rendered {len(sectors)} sectors")
+    
+    # Draw residential plots
+    svg_parts.append('  <g id="layer_residential">')
+    residential_plots = [p for p in society_layout.get('plots', []) if p.get('type') == 'residential']
+    logger.info(f"🏠 Rendering {len(residential_plots)} residential plots")
+    
+    for idx, plot in enumerate(residential_plots):
+        plot_coords = plot.get('coordinates', [])
+        if plot_coords and len(plot_coords) >= 3:
+            points = [transform_coord(c[0], c[1]) for c in plot_coords]
+            points_str = " ".join([f"{p[0]},{p[1]}" for p in points])
+            plot_id = plot.get('id', f'R-{idx}')
+            svg_parts.append(f'    <polygon points="{points_str}" class="plot plot-residential" title="{plot_id}"><title>{plot_id}</title></polygon>')
+            
+            # Only show labels for first 50 plots per sector (avoid clutter)
+            sector_num = plot.get('number', 999)
+            if sector_num <= 10:  # First 10 plots per sector get labels
+                center = plot.get('center', (0, 0))
+                cx, cy = transform_coord(center[0], center[1])
+                svg_parts.append(f'    <text x="{cx}" y="{cy}" class="plot-label">{plot_id}</text>')
+    
+    svg_parts.append('  </g>')
+    logger.info(f"✅ Rendered {len(residential_plots)} residential plots")
+    
+    # Draw commercial plots
+    svg_parts.append('  <g id="layer_commercial">')
+    commercial_plots = [p for p in society_layout.get('plots', []) if p.get('type') == 'commercial']
+    logger.info(f"🏪 Rendering {len(commercial_plots)} commercial plots")
+    
+    for idx, plot in enumerate(commercial_plots):
+        plot_coords = plot.get('coordinates', [])
+        if plot_coords and len(plot_coords) >= 3:
+            points = [transform_coord(c[0], c[1]) for c in plot_coords]
+            points_str = " ".join([f"{p[0]},{p[1]}" for p in points])
+            plot_id = plot.get('id', f'C-{idx}')
+            svg_parts.append(f'    <polygon points="{points_str}" class="plot plot-commercial" title="{plot_id}"><title>{plot_id}</title></polygon>')
+    
+    svg_parts.append('  </g>')
+    logger.info(f"✅ Rendered {len(commercial_plots)} commercial plots")
+    
+    # Draw amenities
+    svg_parts.append('  <g id="layer_green_space">')
+    amenities = society_layout.get('amenities', [])
+    logger.info(f"🌳 Rendering {len(amenities)} amenities")
+    
+    for amenity in amenities:
+        amenity_coords = amenity.get('coordinates', [])
+        center = amenity.get('center', (0, 0))
+        cx, cy = transform_coord(center[0], center[1])
+        
+        amenity_type = amenity.get('type', 'park')
+        icon = amenity.get('icon', '🏢')
+        name = amenity.get('name', amenity_type)
+        
+        # Draw amenity as larger circle or polygon for visibility
+        if amenity_coords and len(amenity_coords) > 2:
+            points = [transform_coord(c[0], c[1]) for c in amenity_coords]
+            points_str = " ".join([f"{p[0]},{p[1]}" for p in points])
+            svg_parts.append(f'    <polygon points="{points_str}" class="amenity amenity-{amenity_type}"><title>{name}</title></polygon>')
+        else:
+            # Draw as larger circle
+            svg_parts.append(f'    <circle cx="{cx}" cy="{cy}" r="50" class="amenity amenity-{amenity_type}"><title>{name}</title></circle>')
+        
+        # Amenity label with icon
+        svg_parts.append(f'    <text x="{cx}" y="{cy}" class="amenity-label" font-size="36">{icon}</text>')
+        svg_parts.append(f'    <text x="{cx}" y="{cy + 45}" class="amenity-label" font-size="18">{name}</text>')
+    
+    svg_parts.append('  </g>')
+    logger.info(f"✅ Rendered {len(amenities)} amenities")
+    
+    # Add restricted zones overlay
+    if restricted_zones:
+        svg_parts.append('  <g id="layer_restricted_areas">')
+        svg_parts.append('    <text x="10" y="30" font-size="14" fill="#ef4444">⚠️ Terrain Restrictions Present</text>')
+        svg_parts.append('  </g>')
+    
+    # Add comprehensive legend
+    svg_parts.append('  <g id="legend" transform="translate(20, 80)">')
+    svg_parts.append('    <rect x="0" y="0" width="280" height="320" fill="white" stroke="#333" stroke-width="2" opacity="0.95" rx="5"/>')
+    svg_parts.append('    <text x="140" y="30" font-size="20" font-weight="bold" text-anchor="middle">Legend</text>')
+    
+    # Statistics in legend
+    res_count = len([p for p in society_layout.get('plots', []) if p.get('type') == 'residential'])
+    com_count = len([p for p in society_layout.get('plots', []) if p.get('type') == 'commercial'])
+    
+    legend_items = [
+        (f'Residential ({res_count} plots)', '#93c5fd', '🏠'),
+        (f'Commercial ({com_count} plots)', '#c4b5fd', '🏪'),
+        ('Road Network', '#6b7280', '🛣️'),
+        ('Park/Green Space', '#86efac', '🌳'),
+        ('Mosque', '#22c55e', '🕌'),
+        ('School', '#fbbf24', '🎓'),
+        ('Hospital', '#ef4444', '🏥'),
+        ('Community Center', '#60a5fa', '🏢'),
+    ]
+    
+    y_offset = 60
+    for label, color, icon in legend_items:
+        svg_parts.append(f'    <rect x="15" y="{y_offset}" width="30" height="25" fill="{color}" stroke="#333" stroke-width="1"/>')
+        svg_parts.append(f'    <text x="60" y="{y_offset + 18}" font-size="18">{icon} {label}</text>')
+        y_offset += 35
+    
+    svg_parts.append('  </g>')
+    
+    # Close SVG
+    svg_parts.append('</svg>')
+    
+    return '\n'.join(svg_parts)
+
+
+def generate_layered_zoning_svg(polygon_coords, percentages, restricted_zones, polygon_id):
+    """
+    Generate SVG with multiple layers for different zones.
+    Each zone is a separate SVG group that can be toggled.
+    """
+    # Calculate bounds
+    lons = [coord[0] for coord in polygon_coords]
+    lats = [coord[1] for coord in polygon_coords]
+    min_lon, max_lon = min(lons), max(lons)
+    min_lat, max_lat = min(lats), max(lats)
+    
+    width = 1200
+    height = 800
+    padding = 50
+    
+    # Scale factors
+    lon_range = max_lon - min_lon
+    lat_range = max_lat - min_lat
+    scale_x = (width - 2 * padding) / lon_range if lon_range > 0 else 1
+    scale_y = (height - 2 * padding) / lat_range if lat_range > 0 else 1
+    
+    def transform_coords(lon, lat):
+        x = padding + (lon - min_lon) * scale_x
+        y = height - padding - (lat - min_lat) * scale_y
+        return x, y
+    
+    # Create Shapely polygon for operations
+    shapely_polygon = Polygon(polygon_coords)
+    
+    # Define zone colors
+    zone_colors = {
+        'residential': '#FFE5B4',  # Peach
+        'commercial': '#DDA0DD',   # Plum
+        'green_space': '#90EE90',  # Light green
+        'roads': '#A9A9A9',        # Dark gray
+        'industrial': '#FFB347',   # Light orange
+        'water_bodies': '#87CEEB', # Sky blue
+        'restricted_areas': '#FF6B6B'  # Red
+    }
+    
+    zone_labels = {
+        'residential': 'Residential',
+        'commercial': 'Commercial',
+        'green_space': 'Green Space',
+        'roads': 'Roads',
+        'industrial': 'Industrial',
+        'water_bodies': 'Water Bodies',
+        'restricted_areas': 'Restricted'
+    }
+    
+    # Start SVG
+    svg_parts = []
+    svg_parts.append(f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" preserveAspectRatio="xMidYMid meet">''')
+    svg_parts.append('<defs>')
+    svg_parts.append('<style>')
+    svg_parts.append('''
+        .zone-layer { transition: opacity 0.3s ease; }
+        .zone-layer:hover { opacity: 0.9; }
+        .zone-label { 
+            font-family: Arial, sans-serif; 
+            font-size: 12px; 
+            font-weight: bold; 
+            pointer-events: none;
+        }
+        .legend-text { 
+            font-family: Arial, sans-serif; 
+            font-size: 11px; 
+        }
+        .zone-polygon {
+            stroke: #333;
+            stroke-width: 1;
+            transition: fill-opacity 0.2s;
+        }
+        .zone-polygon:hover {
+            fill-opacity: 0.8;
+            stroke-width: 2;
+        }
+    ''')
+    svg_parts.append('</style>')
+    svg_parts.append('</defs>')
+    
+    # Background
+    svg_parts.append(f'<rect id="background" width="{width}" height="{height}" fill="#F5F5F5"/>')
+    
+    # Title
+    svg_parts.append(f'<g id="title"><text x="{width/2}" y="30" text-anchor="middle" style="font-family: Arial; font-size: 20px; font-weight: bold; fill: #333;">Zoning Map - Polygon {polygon_id}</text></g>')
+    
+    # Draw polygon boundary first
+    boundary_points = ' '.join([f"{transform_coords(lon, lat)[0]},{transform_coords(lon, lat)[1]}" for lon, lat in polygon_coords])
+    svg_parts.append(f'<g id="layer_boundary"><polygon points="{boundary_points}" fill="white" stroke="#333" stroke-width="2" opacity="0.3"/></g>')
+    
+    # Generate zone geometries using grid-based subdivision
+    zone_polygons = subdivide_polygon_into_zones(shapely_polygon, percentages, restricted_zones)
+    
+    # Draw each zone layer
+    for zone_type, zone_polygon in zone_polygons.items():
+        if zone_polygon and not zone_polygon.is_empty:
+            color = zone_colors.get(zone_type, '#CCCCCC')
+            
+            # Get coordinates
+            if hasattr(zone_polygon, 'geoms'):
+                # MultiPolygon
+                polys = list(zone_polygon.geoms)
+            else:
+                polys = [zone_polygon]
+            
+            svg_parts.append(f'<g id="layer_{zone_type}" class="zone-layer">')
+            
+            for poly_idx, poly in enumerate(polys):
+                coords = list(poly.exterior.coords)
+                points = ' '.join([f"{transform_coords(lon, lat)[0]},{transform_coords(lon, lat)[1]}" for lon, lat in coords])
+                svg_parts.append(f'<polygon class="zone-polygon" points="{points}" fill="{color}" stroke="#333" stroke-width="1" fill-opacity="0.7"/>')
+                
+                # Add label at centroid
+                centroid = poly.centroid
+                cx, cy = transform_coords(centroid.x, centroid.y)
+                label = zone_labels.get(zone_type, zone_type)
+                
+                # Only show label on first polygon of each type to avoid clutter
+                if poly_idx == 0:
+                    svg_parts.append(f'<text x="{cx}" y="{cy}" text-anchor="middle" class="zone-label" fill="#333">{label}</text>')
+            
+            svg_parts.append('</g>')
+    
+    # Draw restricted zones overlay
+    if restricted_zones:
+        svg_parts.append('<g id="layer_restricted_areas" class="zone-layer">')
+        svg_parts.append(f'<text x="{width/2}" y="{height - 20}" text-anchor="middle" class="legend-text" fill="#d32f2f" style="font-weight: bold;">⚠️ {len(restricted_zones)} Terrain Restriction(s) Applied</text>')
+        svg_parts.append('</g>')
+    
+    # Add legend
+    legend_x = width - 190
+    legend_y = 80
+    svg_parts.append(f'<g id="layer_legend" class="zone-layer">')
+    svg_parts.append(f'<rect x="{legend_x - 10}" y="{legend_y - 20}" width="180" height="{len(percentages) * 28 + 50}" fill="white" stroke="#333" stroke-width="1.5" opacity="0.95" rx="5"/>')
+    svg_parts.append(f'<text x="{legend_x}" y="{legend_y}" class="legend-text" style="font-weight: bold; font-size: 13px;">Zone Distribution</text>')
+    
+    y_offset = legend_y + 25
+    for zone_type, percentage in percentages.items():
+        color = zone_colors.get(zone_type, '#CCCCCC')
+        label = zone_labels.get(zone_type, zone_type)
+        svg_parts.append(f'<rect x="{legend_x}" y="{y_offset}" width="18" height="18" fill="{color}" stroke="#333" stroke-width="1.5" rx="2"/>')
+        svg_parts.append(f'<text x="{legend_x + 25}" y="{y_offset + 14}" class="legend-text" style="font-size: 11px;">{label} ({percentage}%)</text>')
+        y_offset += 28
+    
+    svg_parts.append('</g>')
+    
+    # Close SVG
+    svg_parts.append('</svg>')
+    
+    return ''.join(svg_parts)
+
+def subdivide_polygon_into_zones(polygon, percentages, restricted_zones):
+    """
+    Subdivide polygon into zones based on percentages.
+    Uses a grid-based approach for simplicity.
+    """
+    from shapely.geometry import box
+    
+    zones = {}
+    
+    # Get bounds
+    minx, miny, maxx, maxy = polygon.bounds
+    total_area = polygon.area
+    
+    # Create grid cells
+    grid_size = 20  # Number of cells per side
+    cell_width = (maxx - minx) / grid_size
+    cell_height = (maxy - miny) / grid_size
+    
+    # Assign cells to zones based on percentages
+    cells = []
+    for i in range(grid_size):
+        for j in range(grid_size):
+            cell_box = box(
+                minx + i * cell_width,
+                miny + j * cell_height,
+                minx + (i + 1) * cell_width,
+                miny + (j + 1) * cell_height
+            )
+            if polygon.intersects(cell_box):
+                cell_intersection = polygon.intersection(cell_box)
+                cells.append(cell_intersection)
+    
+    # Distribute cells among zones
+    total_cells = len(cells)
+    if total_cells == 0:
+        return zones
+    
+    zone_types = list(percentages.keys())
+    current_index = 0
+    
+    for zone_type in zone_types:
+        percentage = percentages[zone_type]
+        num_cells = int(round(total_cells * percentage / 100.0))
+        
+        zone_cells = cells[current_index:current_index + num_cells]
+        current_index += num_cells
+        
+        if zone_cells:
+            from shapely.ops import unary_union
+            zones[zone_type] = unary_union(zone_cells)
+        else:
+            zones[zone_type] = None
+    
+    return zones
 
 if __name__ == "__main__":
     import uvicorn

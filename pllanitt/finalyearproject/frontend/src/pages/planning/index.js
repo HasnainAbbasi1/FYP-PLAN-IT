@@ -9,3 +9,4 @@ export { default as Suitability } from './Suitability';
 export { default as Terrain } from './Terrain';
 export { default as Zoning } from './Zoning';
 export { default as ZoningSubdivision } from './ZoningSubdivision';
+export { default as ZoningGenerator } from './ZoningGenerator';

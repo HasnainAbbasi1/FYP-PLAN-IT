@@ -107,6 +107,11 @@ const buildSidebarItems = (role = 'viewer', hasProject = false, project = null) 
           icon: <GridIcon  />,
         },
         {
+          title: "Smart Zoning Generator",
+          href: "/zoning-generator",
+          icon: <Layers  />,
+        },
+        {
           title: "Roads & Transport",
           href: "/roads",
           icon: <Route  />,

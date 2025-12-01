@@ -775,11 +775,13 @@ const PolygonZoning = () => {
                               ? originalUrl 
                               : `http://localhost:5002${originalUrl}`;
                             const urlWithCacheBust = `${finalUrl}?t=${Date.now()}&r=${Math.random()}`;
+                            const isSvg = originalUrl.toLowerCase().endsWith('.svg');
                             
                             console.log('🖼️ IMAGE URL DEBUG:');
                             console.log('  Original URL:', originalUrl);
                             console.log('  Final URL:', finalUrl);
                             console.log('  URL with cache bust:', urlWithCacheBust);
+                            console.log('  Is SVG:', isSvg);
                             console.log('  Debug info:', zoningData.analysis.visualization.debug_info);
                             console.log('  Test URL:', zoningData.analysis.visualization.test_url);
                             
@@ -800,10 +802,13 @@ const PolygonZoning = () => {
                             console.error('Original URL:', zoningData.analysis.visualization.image_url);
                             console.error('Debug info:', zoningData.analysis.visualization.debug_info);
                             e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
+                            if (e.target.nextSibling) {
+                              e.target.nextSibling.style.display = 'flex';
+                            }
                           }}
                           onLoad={(e) => {
-                            console.log('2D Zoning image loaded successfully');
+                            const isSvg = zoningData.analysis.visualization.image_url.toLowerCase().endsWith('.svg');
+                            console.log(isSvg ? '✅ SVG visualization loaded successfully' : '✅ 2D Zoning image loaded successfully');
                             console.log('Image URL:', zoningData.analysis.visualization.image_url);
                             console.log('Final URL:', e.target.src);
                           }}
