@@ -13968,6 +13968,8 @@ async def generate_zoning_svg(request: Request):
                 from society_layout import generate_society_layout_dict
                 
                 logger.info(f"🏘️ Generating detailed society layout with {society_layout_type} pattern")
+                logger.info(f"📊 Target percentages: {percentages}")
+                
                 society_layout_data = generate_society_layout_dict(
                     polygon_coords=polygon_coords,
                     percentages=percentages,
@@ -13975,7 +13977,17 @@ async def generate_zoning_svg(request: Request):
                     layout_type=society_layout_type
                 )
                 
+                stats = society_layout_data.get('statistics', {})
+                logger.info(f"📈 Layout Statistics:")
+                logger.info(f"  • Total Sectors: {stats.get('total_sectors', 0)}")
+                logger.info(f"  • Total Plots: {stats.get('total_plots', 0)}")
+                logger.info(f"  • Residential: {stats.get('residential_plots', 0)} plots")
+                logger.info(f"  • Commercial: {stats.get('commercial_plots', 0)} plots")
+                logger.info(f"  • Total Area: {stats.get('total_area_acres', 0):.2f} acres")
+                logger.info(f"  • Estimated Population: {stats.get('estimated_population', 0)}")
+                
                 # Generate enhanced SVG with society details
+                logger.info(f"🎨 Generating enhanced SVG with polygon clipping and visual improvements")
                 svg_content = generate_society_layout_svg(
                     polygon_coords=polygon_coords,
                     society_layout=society_layout_data,
@@ -13985,6 +13997,7 @@ async def generate_zoning_svg(request: Request):
                 )
                 
                 logger.info(f"✅ Generated society layout with {society_layout_data['statistics']['total_plots']} plots")
+                logger.info(f"✨ SVG size: {len(svg_content)} characters, properly clipped to polygon boundaries")
                 
             except Exception as e:
                 logger.error(f"❌ Error generating society layout: {e}")
@@ -14145,6 +14158,7 @@ def calculate_polygon_area_sqm(polygon):
 def generate_society_layout_svg(polygon_coords, society_layout, percentages, restricted_zones, polygon_id):
     """
     Phase 4: Generate detailed society layout SVG with sectors, plots, and amenities.
+    Enhanced with proper polygon clipping and visual improvements.
     """
     # Calculate bounds
     lons = [coord[0] for coord in polygon_coords]
@@ -14152,56 +14166,131 @@ def generate_society_layout_svg(polygon_coords, society_layout, percentages, res
     min_lon, max_lon = min(lons), max(lons)
     min_lat, max_lat = min(lats), max(lats)
     
-    # Fixed large canvas size for detailed plots
-    svg_width = 2000
-    svg_height = 2000
+    # Calculate aspect ratio for better fitting
+    lon_range = max_lon - min_lon
+    lat_range = max_lat - min_lat
+    aspect_ratio = lon_range / lat_range if lat_range > 0 else 1
     
-    # SVG header
+    # Dynamic canvas sizing based on aspect ratio with padding
+    padding = 200  # Space for title and legend
+    max_dimension = 2000
+    
+    if aspect_ratio > 1:
+        svg_width = max_dimension
+        svg_height = int(max_dimension / aspect_ratio) + padding
+    else:
+        svg_width = int(max_dimension * aspect_ratio) + padding
+        svg_height = max_dimension
+    
+    # SVG header with enhanced styles
     svg_parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{svg_width}" height="{svg_height}" viewBox="0 0 {svg_width} {svg_height}">',
         '<defs>',
+        '  <!-- Clip path to ensure all content stays within polygon -->',
+        '  <clipPath id="polygonClip">',
+    ]
+    
+    # Create polygon clip path
+    polygon_points = []
+    for coord in polygon_coords:
+        lon, lat = coord[0], coord[1]
+        x = padding/2 + ((lon - min_lon) / lon_range) * (svg_width - padding) if lon_range > 0 else padding/2
+        y = padding + ((max_lat - lat) / lat_range) * (svg_height - padding - 100) if lat_range > 0 else padding
+        polygon_points.append(f"{x},{y}")
+    
+    svg_parts.append(f'    <polygon points="{" ".join(polygon_points)}"/>')
+    svg_parts.append('  </clipPath>')
+    
+    # Enhanced styles
+    svg_parts.extend([
         '  <style>',
-        '    .sector-boundary { fill: rgba(200,200,200,0.1); stroke: #666; stroke-width: 4; stroke-dasharray: 15,10; }',
-        '    .plot { stroke: #1f2937; stroke-width: 1; }',
-        '    .plot-residential { fill: #93c5fd; opacity: 0.8; }',
-        '    .plot-commercial { fill: #c4b5fd; opacity: 0.8; }',
-        '    .plot:hover { stroke: #000; stroke-width: 2; opacity: 1; }',
-        '    .road { fill: #6b7280; stroke: #4b5563; stroke-width: 2; }',
-        '    .road-main { fill: #374151; stroke: #1f2937; stroke-width: 4; }',
-        '    .amenity { opacity: 0.95; stroke: #1f2937; stroke-width: 2; }',
-        '    .amenity-mosque { fill: #22c55e; }',
-        '    .amenity-park { fill: #86efac; }',
+        '    .polygon-boundary { fill: none; stroke: #DC2626; stroke-width: 6; stroke-dasharray: 20,10; opacity: 0.9; }',
+        '    .polygon-fill { fill: #f9fafb; opacity: 0.95; }',
+        '    .sector-boundary { fill: rgba(100,116,139,0.08); stroke: #64748b; stroke-width: 3; stroke-dasharray: 12,8; opacity: 0.7; }',
+        '    .plot { stroke: #1e293b; stroke-width: 2; transition: all 0.2s; stroke-opacity: 0.8; }',
+        '    .plot-residential { fill: #93c5fd; opacity: 0.9; }',
+        '    .plot-residential-5marla { fill: #dbeafe; opacity: 0.95; }',
+        '    .plot-residential-7marla { fill: #93c5fd; opacity: 0.95; }',
+        '    .plot-residential-10marla { fill: #60a5fa; opacity: 0.95; }',
+        '    .plot-residential-1kanal { fill: #3b82f6; opacity: 0.95; }',
+        '    .plot-commercial { fill: #c4b5fd; opacity: 0.9; }',
+        '    .plot-commercial-small { fill: #e9d5ff; opacity: 0.95; }',
+        '    .plot-commercial-large { fill: #a855f7; opacity: 0.95; }',
+        '    .plot:hover { stroke: #000; stroke-width: 2.5; opacity: 1; filter: brightness(1.1); }',
+        '    .road { fill: #6b7280; stroke: #4b5563; stroke-width: 2; opacity: 0.95; filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.2)); }',
+        '    .road-main { fill: #374151; stroke: #1f2937; stroke-width: 4; opacity: 0.98; filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3)); }',
+        '    .amenity { opacity: 0.95; stroke: #1f2937; stroke-width: 2.5; filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3)); }',
+        '    .amenity-mosque { fill: #10b981; }',
+        '    .amenity-park { fill: #22c55e; }',
+        '    .amenity-playground { fill: #4ade80; }',
+        '    .amenity-garden { fill: #86efac; }',
         '    .amenity-school { fill: #fbbf24; }',
         '    .amenity-commercial_plaza { fill: #c4b5fd; }',
         '    .amenity-hospital { fill: #ef4444; }',
         '    .amenity-community_center { fill: #60a5fa; }',
-        '    .plot-label { font-size: 6px; fill: #1f2937; text-anchor: middle; font-family: Arial, sans-serif; }',
-        '    .sector-label { font-size: 48px; font-weight: bold; fill: #1f2937; fill-opacity: 0.3; text-anchor: middle; font-family: Arial, sans-serif; }',
-        '    .amenity-label { font-size: 24px; fill: #1f2937; text-anchor: middle; font-family: Arial, sans-serif; }',
+        '    .gate { fill: #dc2626; stroke: #991b1b; stroke-width: 3; opacity: 0.95; filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.4)); }',
+        '    .gate-main { fill: #ef4444; stroke: #b91c1c; stroke-width: 4; }',
+        '    .gate-label { font-size: 14px; fill: #ffffff; text-anchor: middle; font-family: Arial, sans-serif; font-weight: 800; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }',
+        '    .plot-label { font-size: 8px; fill: #0f172a; text-anchor: middle; font-family: Arial, sans-serif; font-weight: 600; }',
+        '    .plot-number { font-size: 10px; fill: #000; text-anchor: middle; font-family: Arial, sans-serif; font-weight: 700; }',
+        '    .plot-size { font-size: 7px; fill: #334155; text-anchor: middle; font-family: Arial, sans-serif; font-weight: 500; }',
+        '    .sector-label { font-size: 48px; font-weight: 700; fill: #1e293b; fill-opacity: 0.15; text-anchor: middle; font-family: Arial, sans-serif; }',
+        '    .amenity-label { font-size: 20px; fill: #0f172a; text-anchor: middle; font-family: Arial, sans-serif; font-weight: 600; }',
+        '    .road-label { font-size: 11px; fill: #f8fafc; text-anchor: middle; font-family: Arial, sans-serif; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }',
+        '    .road-width-label { font-size: 8px; fill: #e2e8f0; text-anchor: middle; font-family: Arial, sans-serif; font-weight: 500; }',
+        '    .warning-banner { fill: #fef3c7; stroke: #f59e0b; stroke-width: 2; }',
+        '    .warning-text { fill: #92400e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-weight: 600; }',
         '  </style>',
         '</defs>',
-        '<rect width="100%" height="100%" fill="#f3f4f6"/>',  # Background
-    ]
+        '<rect width="100%" height="100%" fill="#f8fafc"/>',  # Light background
+    ])
     
     # Log total plots for debugging
     total_plots = len(society_layout.get('plots', []))
-    logger.info(f"🎨 Rendering {total_plots} plots in SVG")
+    logger.info(f"🎨 Rendering {total_plots} plots in SVG with polygon clipping")
     
     def transform_coord(lon, lat):
-        """Transform lon/lat to SVG coordinates"""
-        x = ((lon - min_lon) / (max_lon - min_lon)) * svg_width
-        y = svg_height - ((lat - min_lat) / (max_lat - min_lat)) * svg_height
+        """Transform lon/lat to SVG coordinates with padding"""
+        x = padding/2 + ((lon - min_lon) / lon_range) * (svg_width - padding) if lon_range > 0 else padding/2
+        y = padding + ((max_lat - lat) / lat_range) * (svg_height - padding - 100) if lat_range > 0 else padding
         return x, y
+    
+    # Draw polygon boundary background (full fill)
+    svg_parts.append('  <g id="layer_polygon_background">')
+    svg_parts.append(f'    <polygon points="{" ".join(polygon_points)}" class="polygon-fill"/>')
+    svg_parts.append('  </g>')
+    
+    # Add terrain warning banner if restrictions exist
+    if restricted_zones:
+        svg_parts.append('  <g id="terrain_warning">')
+        svg_parts.append(f'    <rect x="10" y="10" width="{svg_width - 20}" height="50" class="warning-banner" rx="5"/>')
+        svg_parts.append(f'    <text x="{svg_width/2}" y="35" font-size="18" class="warning-text" text-anchor="middle">')
+        
+        warnings = []
+        for zone in restricted_zones:
+            if zone.get('type') == 'steep_slope':
+                warnings.append(f"⚠️ Steep Slopes Detected (Max {zone.get('max_slope', 0):.1f}°)")
+            elif zone.get('type') == 'erosion_risk':
+                warnings.append(f"⚠️ Erosion Risk ({zone.get('soil_loss', 0):.1f} t/ha/year)")
+        
+        svg_parts.append(' • '.join(warnings) if warnings else '⚠️ Terrain Restrictions Present')
+        svg_parts.append('    </text>')
+        svg_parts.append('  </g>')
     
     # Add title
     total_plots_count = len(society_layout.get('plots', []))
     total_sectors_count = len(society_layout.get('sectors', []))
-    svg_parts.append(f'  <text x="{svg_width/2}" y="40" font-size="32" font-weight="bold" fill="#1f2937" text-anchor="middle">')
+    title_y = 85 if restricted_zones else 40
+    svg_parts.append(f'  <text x="{svg_width/2}" y="{title_y}" font-size="36" font-weight="bold" fill="#0f172a" text-anchor="middle">')
     svg_parts.append(f'    Society Layout: {total_sectors_count} Sectors • {total_plots_count} Plots')
     svg_parts.append('  </text>')
     
-    # Draw roads first (background layer)
-    svg_parts.append('  <g id="layer_roads">')
+    # Main content group with clip path
+    svg_parts.append('  <g id="society_layout" clip-path="url(#polygonClip)">')
+    
+    # Draw roads first (background layer) with labels and lane markings
+    svg_parts.append('    <g id="layer_roads">')
+    road_counter = 1
     for road in society_layout.get('roads', []):
         road_coords = road.get('coordinates', [])
         road_type = road.get('type', 'sector_road')
@@ -14210,11 +14299,36 @@ def generate_society_layout_svg(polygon_coords, society_layout, percentages, res
             path_d = f"M {points[0][0]},{points[0][1]} " + " ".join([f"L {p[0]},{p[1]}" for p in points[1:]])
             road_width = road.get('width', 10) * 5  # Increase scale for visibility
             road_class = 'road-main' if road_type == 'main_boulevard' else 'road'
-            svg_parts.append(f'    <path d="{path_d}" class="{road_class}" stroke-width="{road_width}"/>')
-    svg_parts.append('  </g>')
+            
+            # Draw road base
+            svg_parts.append(f'      <path d="{path_d}" class="{road_class}" stroke-width="{road_width}" stroke-linecap="round"/>')
+            
+            # Add center lane marking for main boulevard
+            if road_type == 'main_boulevard':
+                svg_parts.append(f'      <path d="{path_d}" fill="none" stroke="#fbbf24" stroke-width="2" stroke-dasharray="10,10" opacity="0.8"/>')
+            
+            # Add road label at midpoint with background
+            mid_idx = len(points) // 2
+            mid_x, mid_y = points[mid_idx]
+            road_name = road.get('name', f'Road {road_counter}')
+            actual_width_ft = int(road.get('width', 10) * 3.28084)  # Convert meters to feet
+            
+            if road_type == 'main_boulevard':
+                # Main boulevard label with larger background
+                svg_parts.append(f'      <rect x="{mid_x - 90}" y="{mid_y - 22}" width="180" height="40" fill="#1f2937" opacity="0.9" rx="6" stroke="#fbbf24" stroke-width="2"/>')
+                svg_parts.append(f'      <text x="{mid_x}" y="{mid_y - 2}" class="road-label" font-size="14">MAIN BOULEVARD</text>')
+                svg_parts.append(f'      <text x="{mid_x}" y="{mid_y + 13}" class="road-width-label" font-size="10">{actual_width_ft} FT WIDE</text>')
+            else:
+                # Sector road label
+                svg_parts.append(f'      <rect x="{mid_x - 50}" y="{mid_y - 18}" width="100" height="32" fill="#4b5563" opacity="0.9" rx="4" stroke="#cbd5e1" stroke-width="1.5"/>')
+                svg_parts.append(f'      <text x="{mid_x}" y="{mid_y}" class="road-label" font-size="11">ROAD {road_counter}</text>')
+                svg_parts.append(f'      <text x="{mid_x}" y="{mid_y + 12}" class="road-width-label" font-size="8">{actual_width_ft} FT</text>')
+            
+            road_counter += 1
+    svg_parts.append('    </g>')
     
     # Draw sectors
-    svg_parts.append('  <g id="layer_sectors">')
+    svg_parts.append('    <g id="layer_sectors">')
     sectors = society_layout.get('sectors', [])
     logger.info(f"🏘️ Rendering {len(sectors)} sectors")
     
@@ -14224,20 +14338,22 @@ def generate_society_layout_svg(polygon_coords, society_layout, percentages, res
             points = [transform_coord(c[0], c[1]) for c in sector_coords]
             points_str = " ".join([f"{p[0]},{p[1]}" for p in points])
             sector_id = sector.get('id', 'X')
-            svg_parts.append(f'    <polygon points="{points_str}" class="sector-boundary"><title>Sector {sector_id}</title></polygon>')
+            svg_parts.append(f'      <polygon points="{points_str}" class="sector-boundary"><title>Sector {sector_id}</title></polygon>')
             
             # Sector label (large, semi-transparent background text)
             center = sector.get('center', (0, 0))
             cx, cy = transform_coord(center[0], center[1])
-            svg_parts.append(f'    <text x="{cx}" y="{cy}" class="sector-label">{sector_id}</text>')
+            # Add sector name label (more prominent)
+            svg_parts.append(f'      <text x="{cx}" y="{cy - 30}" font-size="20" font-weight="bold" fill="#1f2937" text-anchor="middle" opacity="0.8">SECTOR {sector_id}</text>')
+            svg_parts.append(f'      <text x="{cx}" y="{cy}" class="sector-label">{sector_id}</text>')
     
-    svg_parts.append('  </g>')
+    svg_parts.append('    </g>')
     logger.info(f"✅ Rendered {len(sectors)} sectors")
     
-    # Draw residential plots
-    svg_parts.append('  <g id="layer_residential">')
+    # Draw residential plots with detailed labels
+    svg_parts.append('    <g id="layer_residential">')
     residential_plots = [p for p in society_layout.get('plots', []) if p.get('type') == 'residential']
-    logger.info(f"🏠 Rendering {len(residential_plots)} residential plots")
+    logger.info(f"🏠 Rendering {len(residential_plots)} residential plots with detailed labels")
     
     for idx, plot in enumerate(residential_plots):
         plot_coords = plot.get('coordinates', [])
@@ -14245,22 +14361,41 @@ def generate_society_layout_svg(polygon_coords, society_layout, percentages, res
             points = [transform_coord(c[0], c[1]) for c in plot_coords]
             points_str = " ".join([f"{p[0]},{p[1]}" for p in points])
             plot_id = plot.get('id', f'R-{idx}')
-            svg_parts.append(f'    <polygon points="{points_str}" class="plot plot-residential" title="{plot_id}"><title>{plot_id}</title></polygon>')
+            plot_number = plot.get('number', idx + 1)
+            plot_marlas = plot.get('size_marlas', 5)
             
-            # Only show labels for first 50 plots per sector (avoid clutter)
-            sector_num = plot.get('number', 999)
-            if sector_num <= 10:  # First 10 plots per sector get labels
-                center = plot.get('center', (0, 0))
-                cx, cy = transform_coord(center[0], center[1])
-                svg_parts.append(f'    <text x="{cx}" y="{cy}" class="plot-label">{plot_id}</text>')
+            # Determine plot class based on size
+            if plot_marlas <= 4:
+                plot_class = 'plot plot-residential-5marla'
+            elif plot_marlas <= 6:
+                plot_class = 'plot plot-residential-5marla'
+            elif plot_marlas <= 8:
+                plot_class = 'plot plot-residential-7marla'
+            elif plot_marlas <= 15:
+                plot_class = 'plot plot-residential-10marla'
+            else:
+                plot_class = 'plot plot-residential-1kanal'
+            
+            svg_parts.append(f'      <polygon points="{points_str}" class="{plot_class}"><title>{plot_id} - {plot_marlas:.0f} Marla</title></polygon>')
+            
+            # Add plot number and size to ALL plots (not just first 10)
+            center = plot.get('center', (0, 0))
+            cx, cy = transform_coord(center[0], center[1])
+            
+            # Plot number (large, bold)
+            svg_parts.append(f'      <text x="{cx}" y="{cy - 2}" class="plot-number">{plot_number}</text>')
+            
+            # Plot size (smaller, below number)
+            marla_text = f"{plot_marlas:.0f} M" if plot_marlas < 20 else f"{plot_marlas:.0f}"
+            svg_parts.append(f'      <text x="{cx}" y="{cy + 8}" class="plot-size">{marla_text}</text>')
     
-    svg_parts.append('  </g>')
-    logger.info(f"✅ Rendered {len(residential_plots)} residential plots")
+    svg_parts.append('    </g>')
+    logger.info(f"✅ Rendered {len(residential_plots)} residential plots with numbers and sizes")
     
-    # Draw commercial plots
-    svg_parts.append('  <g id="layer_commercial">')
+    # Draw commercial plots with detailed labels
+    svg_parts.append('    <g id="layer_commercial">')
     commercial_plots = [p for p in society_layout.get('plots', []) if p.get('type') == 'commercial']
-    logger.info(f"🏪 Rendering {len(commercial_plots)} commercial plots")
+    logger.info(f"🏪 Rendering {len(commercial_plots)} commercial plots with detailed labels")
     
     for idx, plot in enumerate(commercial_plots):
         plot_coords = plot.get('coordinates', [])
@@ -14268,13 +14403,26 @@ def generate_society_layout_svg(polygon_coords, society_layout, percentages, res
             points = [transform_coord(c[0], c[1]) for c in plot_coords]
             points_str = " ".join([f"{p[0]},{p[1]}" for p in points])
             plot_id = plot.get('id', f'C-{idx}')
-            svg_parts.append(f'    <polygon points="{points_str}" class="plot plot-commercial" title="{plot_id}"><title>{plot_id}</title></polygon>')
+            plot_number = plot.get('number', idx + 1)
+            plot_marlas = plot.get('size_marlas', 10)
+            
+            # Commercial plots are typically larger
+            plot_class = 'plot plot-commercial-large' if plot_marlas > 12 else 'plot plot-commercial-small'
+            
+            svg_parts.append(f'      <polygon points="{points_str}" class="{plot_class}"><title>{plot_id} - {plot_marlas:.0f} Marla</title></polygon>')
+            
+            # Add plot number and size to commercial plots
+            center = plot.get('center', (0, 0))
+            cx, cy = transform_coord(center[0], center[1])
+            
+            svg_parts.append(f'      <text x="{cx}" y="{cy - 2}" class="plot-number">C-{plot_number}</text>')
+            svg_parts.append(f'      <text x="{cx}" y="{cy + 8}" class="plot-size">{plot_marlas:.0f} M</text>')
     
-    svg_parts.append('  </g>')
-    logger.info(f"✅ Rendered {len(commercial_plots)} commercial plots")
+    svg_parts.append('    </g>')
+    logger.info(f"✅ Rendered {len(commercial_plots)} commercial plots with numbers and sizes")
     
     # Draw amenities
-    svg_parts.append('  <g id="layer_green_space">')
+    svg_parts.append('    <g id="layer_green_space">')
     amenities = society_layout.get('amenities', [])
     logger.info(f"🌳 Rendering {len(amenities)} amenities")
     
@@ -14291,54 +14439,178 @@ def generate_society_layout_svg(polygon_coords, society_layout, percentages, res
         if amenity_coords and len(amenity_coords) > 2:
             points = [transform_coord(c[0], c[1]) for c in amenity_coords]
             points_str = " ".join([f"{p[0]},{p[1]}" for p in points])
-            svg_parts.append(f'    <polygon points="{points_str}" class="amenity amenity-{amenity_type}"><title>{name}</title></polygon>')
+            svg_parts.append(f'      <polygon points="{points_str}" class="amenity amenity-{amenity_type}"><title>{name}</title></polygon>')
         else:
             # Draw as larger circle
-            svg_parts.append(f'    <circle cx="{cx}" cy="{cy}" r="50" class="amenity amenity-{amenity_type}"><title>{name}</title></circle>')
+            svg_parts.append(f'      <circle cx="{cx}" cy="{cy}" r="50" class="amenity amenity-{amenity_type}"><title>{name}</title></circle>')
         
-        # Amenity label with icon
-        svg_parts.append(f'    <text x="{cx}" y="{cy}" class="amenity-label" font-size="36">{icon}</text>')
-        svg_parts.append(f'    <text x="{cx}" y="{cy + 45}" class="amenity-label" font-size="18">{name}</text>')
+        # Amenity label with icon and name (more prominent with better positioning)
+        # Position icon above the amenity center
+        svg_parts.append(f'      <text x="{cx}" y="{cy - 25}" class="amenity-label" font-size="42">{icon}</text>')
+        
+        # Amenity name on white background for better visibility - position below icon
+        name_parts = name.split()
+        label_width = max(120, len(name) * 8)  # Dynamic width based on name length
+        
+        if len(name_parts) > 2:
+            # Multi-line for long names
+            svg_parts.append(f'      <rect x="{cx - label_width/2}" y="{cy + 10}" width="{label_width}" height="40" fill="white" opacity="0.95" rx="4" stroke="#1f2937" stroke-width="1.5"/>')
+            svg_parts.append(f'      <text x="{cx}" y="{cy + 27}" class="amenity-label" font-size="12" font-weight="700">{" ".join(name_parts[:2])}</text>')
+            svg_parts.append(f'      <text x="{cx}" y="{cy + 41}" class="amenity-label" font-size="12" font-weight="700">{" ".join(name_parts[2:])}</text>')
+        else:
+            svg_parts.append(f'      <rect x="{cx - label_width/2}" y="{cy + 10}" width="{label_width}" height="28" fill="white" opacity="0.95" rx="4" stroke="#1f2937" stroke-width="1.5"/>')
+            svg_parts.append(f'      <text x="{cx}" y="{cy + 30}" class="amenity-label" font-size="14" font-weight="700">{name}</text>')
     
-    svg_parts.append('  </g>')
+    svg_parts.append('    </g>')
     logger.info(f"✅ Rendered {len(amenities)} amenities")
     
-    # Add restricted zones overlay
-    if restricted_zones:
-        svg_parts.append('  <g id="layer_restricted_areas">')
-        svg_parts.append('    <text x="10" y="30" font-size="14" fill="#ef4444">⚠️ Terrain Restrictions Present</text>')
-        svg_parts.append('  </g>')
+    # Draw gates (entry points)
+    svg_parts.append('    <g id="layer_gates">')
+    gates = society_layout.get('gates', [])
+    logger.info(f"🚪 Rendering {len(gates)} gates")
     
-    # Add comprehensive legend
-    svg_parts.append('  <g id="legend" transform="translate(20, 80)">')
-    svg_parts.append('    <rect x="0" y="0" width="280" height="320" fill="white" stroke="#333" stroke-width="2" opacity="0.95" rx="5"/>')
-    svg_parts.append('    <text x="140" y="30" font-size="20" font-weight="bold" text-anchor="middle">Legend</text>')
+    for gate in gates:
+        gate_coords = gate.get('coordinates', [])
+        center = gate.get('center', (0, 0))
+        cx, cy = transform_coord(center[0], center[1])
+        
+        gate_type = gate.get('type', 'main')
+        name = gate.get('name', 'Gate')
+        position = gate.get('position', 'south')
+        
+        # Draw gate as a distinctive rectangle with icon
+        gate_width = 80 if gate_type == 'main' else 60
+        gate_height = 50 if gate_type == 'main' else 40
+        gate_class = 'gate gate-main' if gate_type == 'main' else 'gate'
+        
+        # Gate structure (rectangle with rounded corners)
+        svg_parts.append(f'      <rect x="{cx - gate_width/2}" y="{cy - gate_height/2}" width="{gate_width}" height="{gate_height}" class="{gate_class}" rx="8"><title>{name}</title></rect>')
+        
+        # Gate icon and label
+        svg_parts.append(f'      <text x="{cx}" y="{cy + 5}" class="gate-label" font-size="24">🚪</text>')
+        
+        # Gate name below
+        label_y = cy + gate_height/2 + 18
+        svg_parts.append(f'      <rect x="{cx - gate_width/2 - 5}" y="{label_y - 15}" width="{gate_width + 10}" height="22" fill="#dc2626" opacity="0.95" rx="4" stroke="#991b1b" stroke-width="2"/>')
+        svg_parts.append(f'      <text x="{cx}" y="{label_y}" class="gate-label" font-size="12">{name.upper()}</text>')
+        
+        # Add directional arrow
+        arrow_offset = 30
+        if position == 'south':
+            svg_parts.append(f'      <path d="M {cx} {cy - gate_height/2 - arrow_offset} L {cx - 8} {cy - gate_height/2 - arrow_offset + 15} L {cx + 8} {cy - gate_height/2 - arrow_offset + 15} Z" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>')
+        elif position == 'north':
+            svg_parts.append(f'      <path d="M {cx} {cy + gate_height/2 + arrow_offset} L {cx - 8} {cy + gate_height/2 + arrow_offset - 15} L {cx + 8} {cy + gate_height/2 + arrow_offset - 15} Z" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>')
+        elif position == 'east':
+            svg_parts.append(f'      <path d="M {cx + gate_width/2 + arrow_offset} {cy} L {cx + gate_width/2 + arrow_offset - 15} {cy - 8} L {cx + gate_width/2 + arrow_offset - 15} {cy + 8} Z" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>')
+        elif position == 'west':
+            svg_parts.append(f'      <path d="M {cx - gate_width/2 - arrow_offset} {cy} L {cx - gate_width/2 - arrow_offset + 15} {cy - 8} L {cx - gate_width/2 - arrow_offset + 15} {cy + 8} Z" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>')
+    
+    svg_parts.append('    </g>')
+    logger.info(f"✅ Rendered {len(gates)} gates")
+    
+    # Close the clipped content group
+    svg_parts.append('  </g>')
+    
+    # Draw boundary wall (double line for realism)
+    svg_parts.append('  <g id="layer_boundary_wall">')
+    # Outer wall (thicker, darker)
+    svg_parts.append(f'    <polygon points="{" ".join(polygon_points)}" fill="none" stroke="#8b5a2b" stroke-width="8" opacity="0.6"/>')
+    # Inner wall (thinner, lighter - creates 3D effect)
+    svg_parts.append(f'    <polygon points="{" ".join(polygon_points)}" fill="none" stroke="#d4a574" stroke-width="4" opacity="0.8"/>')
+    svg_parts.append('  </g>')
+    
+    # Draw polygon boundary as overlay (on top, not clipped) - red dashed for reference
+    svg_parts.append('  <g id="layer_polygon_boundary">')
+    svg_parts.append(f'    <polygon points="{" ".join(polygon_points)}" class="polygon-boundary"/>')
+    svg_parts.append('  </g>')
+    
+    # Add comprehensive legend with improved styling
+    legend_y = 120 if restricted_zones else 80
+    svg_parts.append(f'  <g id="legend" transform="translate(15, {legend_y})">')
+    svg_parts.append('    <rect x="0" y="0" width="250" height="440" fill="white" stroke="#334155" stroke-width="2.5" opacity="0.98" rx="6" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.15))"/>')
+    svg_parts.append('    <text x="125" y="28" font-size="18" font-weight="bold" text-anchor="middle" fill="#0f172a">Legend</text>')
+    svg_parts.append('    <line x1="15" y1="40" x2="235" y2="40" stroke="#cbd5e1" stroke-width="2"/>')
     
     # Statistics in legend
     res_count = len([p for p in society_layout.get('plots', []) if p.get('type') == 'residential'])
     com_count = len([p for p in society_layout.get('plots', []) if p.get('type') == 'commercial'])
     
     legend_items = [
-        (f'Residential ({res_count} plots)', '#93c5fd', '🏠'),
-        (f'Commercial ({com_count} plots)', '#c4b5fd', '🏪'),
-        ('Road Network', '#6b7280', '🛣️'),
-        ('Park/Green Space', '#86efac', '🌳'),
-        ('Mosque', '#22c55e', '🕌'),
+        (f'Residential 5 Marla', '#dbeafe', '🏠'),
+        (f'Residential 7-10 Marla', '#93c5fd', '🏠'),
+        (f'Residential 1 Kanal+', '#3b82f6', '🏠'),
+        (f'Commercial', '#c4b5fd', '🏪'),
+        ('Main Gate', '#ef4444', '🚪'),
+        ('Service Gate', '#dc2626', '🚪'),
+        ('Main Boulevard', '#374151', '🛣️'),
+        ('Sector Roads', '#6b7280', '🛣️'),
+        ('Park (Green Space)', '#22c55e', '🌳'),
+        ('Playground', '#4ade80', '🎪'),
+        ('Garden', '#86efac', '🌺'),
+        ('Mosque', '#10b981', '🕌'),
         ('School', '#fbbf24', '🎓'),
-        ('Hospital', '#ef4444', '🏥'),
-        ('Community Center', '#60a5fa', '🏢'),
     ]
     
-    y_offset = 60
+    y_offset = 58
     for label, color, icon in legend_items:
-        svg_parts.append(f'    <rect x="15" y="{y_offset}" width="30" height="25" fill="{color}" stroke="#333" stroke-width="1"/>')
-        svg_parts.append(f'    <text x="60" y="{y_offset + 18}" font-size="18">{icon} {label}</text>')
-        y_offset += 35
+        svg_parts.append(f'    <rect x="12" y="{y_offset}" width="28" height="22" fill="{color}" stroke="#334155" stroke-width="1.5" rx="2"/>')
+        svg_parts.append(f'    <text x="50" y="{y_offset + 16}" font-size="13" fill="#1e293b" font-weight="500">{icon} {label}</text>')
+        y_offset += 30
     
     svg_parts.append('  </g>')
     
+    # Add statistics summary box (top-right)
+    stats = society_layout.get('statistics', {})
+    total_area_acres = stats.get('total_area_acres', 0)
+    estimated_pop = stats.get('estimated_population', 0)
+    
+    stats_box_x = svg_width - 270
+    svg_parts.append(f'  <g id="statistics_box" transform="translate({stats_box_x}, {legend_y})">')
+    svg_parts.append('    <rect x="0" y="0" width="250" height="180" fill="white" stroke="#334155" stroke-width="2.5" opacity="0.98" rx="6" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.15))"/>')
+    svg_parts.append('    <text x="125" y="28" font-size="18" font-weight="bold" text-anchor="middle" fill="#0f172a">Society Statistics</text>')
+    svg_parts.append('    <line x1="15" y1="40" x2="235" y2="40" stroke="#cbd5e1" stroke-width="2"/>')
+    
+    num_gates = len(society_layout.get('gates', []))
+    green_spaces = len([a for a in society_layout.get('amenities', []) if a.get('type') in ['park', 'playground', 'garden']])
+    
+    stat_items = [
+        ('Total Area', f'{total_area_acres:.2f} acres'),
+        ('Total Plots', f'{res_count + com_count}'),
+        ('Residential', f'{res_count} plots'),
+        ('Commercial', f'{com_count} plots'),
+        ('Entry Gates', f'{num_gates}'),
+        ('Green Spaces', f'{green_spaces}'),
+        ('Population', f'~{estimated_pop:,}'),
+    ]
+    
+    y_stat = 60
+    for label, value in stat_items:
+        svg_parts.append(f'    <text x="15" y="{y_stat}" font-size="12" fill="#64748b" font-weight="500">{label}:</text>')
+        svg_parts.append(f'    <text x="235" y="{y_stat}" font-size="12" fill="#0f172a" font-weight="700" text-anchor="end">{value}</text>')
+        y_stat += 20
+    
+    svg_parts.append('  </g>')
+    
+    # Add North Arrow (top-left, below legend)
+    north_y = legend_y + 340
+    svg_parts.append(f'  <g id="north_arrow" transform="translate(100, {north_y})">')
+    svg_parts.append('    <circle cx="0" cy="0" r="35" fill="white" stroke="#334155" stroke-width="2" opacity="0.95"/>')
+    # North arrow pointer
+    svg_parts.append('    <path d="M 0,-25 L -8,-5 L 0,-10 L 8,-5 Z" fill="#dc2626" stroke="#991b1b" stroke-width="1.5"/>')
+    svg_parts.append('    <text x="0" y="-30" font-size="16" font-weight="bold" fill="#dc2626" text-anchor="middle">N</text>')
+    # Direction markers
+    svg_parts.append('    <text x="28" y="5" font-size="10" fill="#64748b" font-weight="500">E</text>')
+    svg_parts.append('    <text x="-28" y="5" font-size="10" fill="#64748b" font-weight="500">W</text>')
+    svg_parts.append('    <text x="0" y="30" font-size="10" fill="#64748b" font-weight="500">S</text>')
+    svg_parts.append('  </g>')
+    
+    # Add watermark/branding
+    svg_parts.append(f'  <text x="{svg_width - 10}" y="{svg_height - 10}" font-size="12" fill="#94a3b8" text-anchor="end" opacity="0.7">Generated by PLLanitt • Polygon ID: {polygon_id}</text>')
+    
     # Close SVG
     svg_parts.append('</svg>')
+    
+    logger.info(f"✅ SVG generation complete with {len(svg_parts)} elements")
     
     return '\n'.join(svg_parts)
 

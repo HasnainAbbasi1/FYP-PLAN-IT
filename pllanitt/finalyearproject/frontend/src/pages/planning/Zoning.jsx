@@ -210,43 +210,54 @@ const Zoning = () => {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-background p-6 md:p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-purple-900 p-6 md:p-4">
         {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl md:text-3xl font-extrabold mb-2 m-0 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+        <div className="mb-10 text-center">
+          <div className="inline-block mb-4 p-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full shadow-2xl">
+            <Brain className="h-12 w-12 text-white animate-pulse" />
+          </div>
+          <h1 className="text-5xl md:text-4xl font-extrabold mb-4 m-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent drop-shadow-lg">
             Intelligent Zoning Analysis
           </h1>
-          <p className="text-lg md:text-base text-muted-foreground font-medium m-0">
+          <p className="text-xl md:text-lg text-slate-700 dark:text-slate-300 font-semibold m-0 max-w-3xl mx-auto">
             AI-powered zoning recommendations based on terrain analysis and DEM data
           </p>
         </div>
 
         {/* Selection Controls */}
-        <Card className="bg-gradient-to-br from-white/10 to-white/5 dark:from-white/10 dark:to-white/5 border border-white/20 dark:border-white/20 rounded-[20px] shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-2px_rgba(0,0,0,0.05)] mb-6 backdrop-blur-[10px] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] animate-fade-in">
-                  <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
+        <Card className="bg-gradient-to-br from-white/95 to-blue-50/95 dark:from-slate-800/95 dark:to-blue-900/95 border-2 border-blue-300 dark:border-blue-700 rounded-3xl shadow-2xl mb-8 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-3xl animate-fade-in">
+                  <CardHeader className="pb-6">
+            <CardTitle className="flex items-center gap-3 text-2xl font-bold text-blue-900 dark:text-blue-100">
+              <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg">
+                <MapPin className="h-6 w-6 text-white" />
+              </div>
               Select Analysis Area
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-base text-blue-700 dark:text-blue-300 mt-2">
               Choose a project and polygon to analyze for intelligent zoning
             </CardDescription>
                   </CardHeader>
                   <CardContent>
-            <div className="flex flex-col gap-5 md:gap-4">
+            <div className="flex flex-col gap-6 md:gap-5">
               {/* Project Display */}
               {currentProject && (
-                <div className="flex flex-col gap-2">
-                  <label className="font-semibold text-foreground text-[0.95rem]">Project</label>
-                  <div className="bg-background border-2 border-border text-foreground rounded-xl px-4 py-3 text-base transition-all duration-300 hover:border-primary hover:shadow-[0_0_0_3px_rgba(59,130,246,0.1)] focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(59,130,246,0.2)]">
+                <div className="flex flex-col gap-3">
+                  <label className="font-bold text-blue-900 dark:text-blue-100 text-lg flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    Project
+                  </label>
+                  <div className="bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 border-2 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-100 rounded-2xl px-6 py-4 text-lg font-semibold transition-all duration-300 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-xl hover:scale-105">
                     {currentProject.title || currentProject.name || `Project ${currentProject.id}`}
                   </div>
                 </div>
               )}
             
               {/* Polygon Selection */}
-              <div className="flex flex-col gap-2">
-                <label className="font-semibold text-foreground text-[0.95rem]">Polygon</label>
+              <div className="flex flex-col gap-3">
+                <label className="font-bold text-purple-900 dark:text-purple-100 text-lg flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Polygon
+                </label>
                 <Select 
                   value={selectedPolygon?.id?.toString()} 
                   onValueChange={(value) => {
@@ -256,12 +267,12 @@ const Zoning = () => {
                   }}
                   disabled={!currentProject}
                 >
-                  <SelectTrigger className="bg-background border-2 border-border text-foreground rounded-xl px-4 py-3 text-base transition-all duration-300 hover:border-primary hover:shadow-[0_0_0_3px_rgba(59,130,246,0.1)] focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(59,130,246,0.2)]">
+                  <SelectTrigger className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 border-2 border-purple-300 dark:border-purple-700 text-purple-900 dark:text-purple-100 rounded-2xl px-6 py-4 text-lg font-semibold transition-all duration-300 hover:border-purple-500 dark:hover:border-purple-500 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
                     <SelectValue placeholder="Select a polygon" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gradient-base border border-accent rounded-xl shadow-[0_10px_15px_-3px_rgba(69,136,173,0.4)] max-h-[400px] overflow-y-auto">
+                  <SelectContent className="bg-white dark:bg-slate-800 border-2 border-purple-300 dark:border-purple-700 rounded-2xl shadow-2xl max-h-[400px] overflow-y-auto">
                     {polygons.map((polygon) => (
-                      <SelectItem key={polygon.id} value={polygon.id.toString()}>
+                      <SelectItem key={polygon.id} value={polygon.id.toString()} className="text-lg py-3 hover:bg-purple-100 dark:hover:bg-purple-900 cursor-pointer rounded-xl transition-all">
                         {polygon.name || `Polygon ${polygon.id}`}
                       </SelectItem>
                     ))}
@@ -270,20 +281,20 @@ const Zoning = () => {
                     </div>
                     
               {/* Analysis Button */}
-              <div className="flex justify-center mt-4">
+              <div className="flex justify-center mt-6">
                 <Button
                   onClick={runIntelligentZoning}
                   disabled={!selectedPolygon || isAnalyzing}
-                  className="w-full max-w-[300px] py-4 px-6 bg-primary text-primary-foreground border-none rounded-xl text-base font-semibold cursor-pointer transition-all duration-300 shadow-[0_4px_6px_-1px_rgba(59,130,246,0.3)] relative overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_10px_15px_-3px_rgba(69,136,173,0.4)] hover:bg-accent hover:text-accent-foreground disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none before:content-[''] before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:transition-[left] before:duration-500 hover:before:left-full"
+                  className="w-full max-w-[400px] py-6 px-8 bg-gradient-to-r from-green-500 via-teal-500 to-blue-500 text-white border-none rounded-2xl text-lg font-bold cursor-pointer transition-all duration-300 shadow-2xl relative overflow-hidden hover:-translate-y-1 hover:shadow-3xl hover:from-green-600 hover:via-teal-600 hover:to-blue-600 disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-md before:content-[''] before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:transition-[left] before:duration-500 hover:before:left-full"
                 >
                   {isAnalyzing ? (
                     <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing...
+                      <RefreshCw className="h-5 w-5 mr-3 animate-spin" />
+                      Analyzing Terrain...
                     </>
                   ) : (
                     <>
-                      <Brain className="h-4 w-4 mr-2" />
+                      <Brain className="h-5 w-5 mr-3" />
                       Run Intelligent Zoning
                     </>
                   )}
@@ -293,35 +304,59 @@ const Zoning = () => {
                     
             {/* Selected Area Info */}
             {currentProject && selectedPolygon && (
-              <div className="bg-gradient-base border border-accent rounded-xl p-4 mt-5 shadow-[0_4px_6px_-1px_rgba(59,130,246,0.3)]">
-                <div className="text-white mb-2 text-[0.95rem] last:mb-0">
-                  <strong className="font-semibold mr-2">Project:</strong> {currentProject.title || currentProject.name || `Project ${currentProject.id}`}
-                      </div>
-                <div className="text-white mb-2 text-[0.95rem] last:mb-0">
-                  <strong className="font-semibold mr-2">Polygon:</strong> {selectedPolygon.name || `Polygon ${selectedPolygon.id}`}
-                        </div>
-                <div className="text-white mb-2 text-[0.95rem] last:mb-0">
-                  <strong className="font-semibold mr-2">Area:</strong> {selectedPolygon.area ? `${selectedPolygon.area.toFixed(2)} m²` : 'Calculating...'}
-                        </div>
-                      </div>
+              <div className="bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900 dark:to-teal-900 border-2 border-emerald-300 dark:border-emerald-700 rounded-2xl p-6 mt-6 shadow-xl">
+                <h3 className="text-xl font-bold text-emerald-900 dark:text-emerald-100 mb-4 flex items-center gap-2">
+                  <Info className="h-5 w-5" />
+                  Selected Area Information
+                </h3>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-slate-800/60 rounded-xl">
+                    <Building2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    <div>
+                      <span className="text-emerald-800 dark:text-emerald-200 text-sm font-medium">Project:</span>
+                      <p className="text-emerald-900 dark:text-emerald-100 text-base font-bold">{currentProject.title || currentProject.name || `Project ${currentProject.id}`}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-slate-800/60 rounded-xl">
+                    <MapPin className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                    <div>
+                      <span className="text-teal-800 dark:text-teal-200 text-sm font-medium">Polygon:</span>
+                      <p className="text-teal-900 dark:text-teal-100 text-base font-bold">{selectedPolygon.name || `Polygon ${selectedPolygon.id}`}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-slate-800/60 rounded-xl">
+                    <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div>
+                      <span className="text-blue-800 dark:text-blue-200 text-sm font-medium">Area:</span>
+                      <p className="text-blue-900 dark:text-blue-100 text-base font-bold">{selectedPolygon.area ? `${selectedPolygon.area.toFixed(2)} m² (${(selectedPolygon.area / 10000).toFixed(2)} ha)` : 'Calculating...'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
 
         {/* Error Display */}
         {error && (
-          <Alert className="bg-destructive text-destructive-foreground border border-destructive rounded-xl mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+          <Alert className="bg-gradient-to-r from-red-100 to-pink-100 dark:from-red-900 dark:to-pink-900 text-red-900 dark:text-red-100 border-2 border-red-400 dark:border-red-700 rounded-2xl mb-8 shadow-xl p-5">
+            <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+            <AlertDescription className="text-base font-semibold ml-2">{error}</AlertDescription>
           </Alert>
         )}
 
         {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-          <TabsList className="bg-muted border-2 border-border rounded-2xl p-2 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]">
-            <TabsTrigger value="analysis">2D Analysis</TabsTrigger>
-            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
+          <TabsList className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 border-2 border-slate-300 dark:border-slate-700 rounded-3xl p-3 shadow-2xl gap-2">
+            <TabsTrigger value="analysis" className="rounded-2xl px-6 py-3 text-base font-bold transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-xl hover:scale-105">
+              2D Analysis
+            </TabsTrigger>
+            <TabsTrigger value="recommendations" className="rounded-2xl px-6 py-3 text-base font-bold transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-xl hover:scale-105">
+              Recommendations
+            </TabsTrigger>
+            <TabsTrigger value="history" className="rounded-2xl px-6 py-3 text-base font-bold transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-xl hover:scale-105">
+              History
+            </TabsTrigger>
           </TabsList>
 
           {/* 2D Analysis Tab */}
@@ -336,14 +371,16 @@ const Zoning = () => {
           </TabsContent>
 
           {/* Recommendations Tab */}
-          <TabsContent value="recommendations" className="mt-6">
+          <TabsContent value="recommendations" className="mt-8">
             {zoningData ? (
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-8">
                 {/* Primary Recommendation */}
-                <Card className="bg-gradient-to-br from-white/10 to-white/5 dark:from-white/10 dark:to-white/5 border border-white/20 dark:border-white/20 rounded-[20px] shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1)] backdrop-blur-[10px] animate-fade-in">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
+                <Card className="bg-gradient-to-br from-green-50/95 to-teal-50/95 dark:from-slate-800/95 dark:to-teal-900/95 border-2 border-green-300 dark:border-green-700 rounded-3xl shadow-2xl backdrop-blur-xl animate-fade-in hover:-translate-y-1 transition-all duration-300">
+                  <CardHeader className="pb-6">
+                    <CardTitle className="flex items-center gap-3 text-2xl font-bold text-green-900 dark:text-green-100">
+                      <div className="p-2 bg-gradient-to-r from-green-500 to-teal-600 rounded-xl shadow-lg">
+                        <TrendingUp className="h-6 w-6 text-white" />
+                      </div>
                       Primary Zoning Recommendation
                     </CardTitle>
                   </CardHeader>
@@ -385,10 +422,15 @@ const Zoning = () => {
             </Card>
           
                 {/* Zone Breakdown */}
-                <Card className="bg-gradient-to-br from-white/10 to-white/5 dark:from-white/10 dark:to-white/5 border border-white/20 dark:border-white/20 rounded-[20px] shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1)] backdrop-blur-[10px] animate-fade-in">
-              <CardHeader>
-                    <CardTitle>Zone Distribution</CardTitle>
-                    <CardDescription>Probability breakdown for different zone types</CardDescription>
+                <Card className="bg-gradient-to-br from-blue-50/95 to-indigo-50/95 dark:from-slate-800/95 dark:to-indigo-900/95 border-2 border-blue-300 dark:border-blue-700 rounded-3xl shadow-2xl backdrop-blur-xl animate-fade-in hover:-translate-y-1 transition-all duration-300">
+              <CardHeader className="pb-6">
+                    <CardTitle className="flex items-center gap-3 text-2xl font-bold text-blue-900 dark:text-blue-100">
+                      <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                        <MapPin className="h-6 w-6 text-white" />
+                      </div>
+                      Zone Distribution
+                    </CardTitle>
+                    <CardDescription className="text-base text-blue-700 dark:text-blue-300 mt-2">Probability breakdown for different zone types</CardDescription>
               </CardHeader>
               <CardContent>
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4 md:grid-cols-1">
@@ -423,13 +465,15 @@ const Zoning = () => {
                 </Card>
 
                 {/* Terrain Analysis Summary */}
-                <Card className="bg-gradient-to-br from-white/10 to-white/5 dark:from-white/10 dark:to-white/5 border border-white/20 dark:border-white/20 rounded-[20px] shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1)] backdrop-blur-[10px] animate-fade-in">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Info className="h-5 w-5" />
+                <Card className="bg-gradient-to-br from-purple-50/95 to-pink-50/95 dark:from-slate-800/95 dark:to-purple-900/95 border-2 border-purple-300 dark:border-purple-700 rounded-3xl shadow-2xl backdrop-blur-xl animate-fade-in hover:-translate-y-1 transition-all duration-300">
+                  <CardHeader className="pb-6">
+                    <CardTitle className="flex items-center gap-3 text-2xl font-bold text-purple-900 dark:text-purple-100">
+                      <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl shadow-lg">
+                        <Info className="h-6 w-6 text-white" />
+                      </div>
                       Terrain Analysis Summary
                     </CardTitle>
-                    <CardDescription>Key terrain factors influencing zoning decisions</CardDescription>
+                    <CardDescription className="text-base text-purple-700 dark:text-purple-300 mt-2">Key terrain factors influencing zoning decisions</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 md:grid-cols-2 sm:grid-cols-1">
@@ -455,11 +499,13 @@ const Zoning = () => {
                 </Card>
                           </div>
             ) : (
-              <Card className="bg-gradient-to-br from-white/10 to-white/5 dark:from-white/10 dark:to-white/5 border border-white/20 dark:border-white/20 rounded-[20px] shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1)] backdrop-blur-[10px] animate-fade-in">
-                <CardContent className="flex flex-col items-center justify-center py-[60px] px-5 text-center">
-                  <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Analysis Available</h3>
-                  <p className="text-muted-foreground text-center">
+              <Card className="bg-gradient-to-br from-amber-50/95 to-orange-50/95 dark:from-slate-800/95 dark:to-orange-900/95 border-2 border-amber-300 dark:border-amber-700 rounded-3xl shadow-2xl backdrop-blur-xl animate-fade-in">
+                <CardContent className="flex flex-col items-center justify-center py-20 px-8 text-center">
+                  <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-2xl mb-6 animate-pulse">
+                    <Brain className="h-12 w-12 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4 text-amber-900 dark:text-amber-100">No Analysis Available</h3>
+                  <p className="text-amber-800 dark:text-amber-200 text-lg max-w-md">
                     Run intelligent zoning analysis to see detailed recommendations and zone distribution.
                   </p>
               </CardContent>
@@ -468,11 +514,16 @@ const Zoning = () => {
           </TabsContent>
           
           {/* History Tab */}
-          <TabsContent value="history" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Analysis History</CardTitle>
-                <CardDescription>Previous zoning analyses for this session</CardDescription>
+          <TabsContent value="history" className="mt-8">
+            <Card className="bg-gradient-to-br from-indigo-50/95 to-purple-50/95 dark:from-slate-800/95 dark:to-indigo-900/95 border-2 border-indigo-300 dark:border-indigo-700 rounded-3xl shadow-2xl backdrop-blur-xl">
+              <CardHeader className="pb-6">
+                <CardTitle className="flex items-center gap-3 text-2xl font-bold text-indigo-900 dark:text-indigo-100">
+                  <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg">
+                    <RefreshCw className="h-6 w-6 text-white" />
+                  </div>
+                  Analysis History
+                </CardTitle>
+                <CardDescription className="text-base text-indigo-700 dark:text-indigo-300 mt-2">Previous zoning analyses for this session</CardDescription>
               </CardHeader>
               <CardContent>
                 {analysisHistory.length > 0 ? (

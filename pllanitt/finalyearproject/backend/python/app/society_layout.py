@@ -56,10 +56,11 @@ class SocietyLayoutGenerator:
         self.plots = []
         self.roads = []
         self.amenities = []
+        self.gates = []
         
     def generate_layout(self, layout_type='grid'):
         """
-        Generate complete society layout
+        Generate complete society layout with enhanced boundary validation
         
         Args:
             layout_type: 'grid', 'organic', 'radial', or 'cluster'
@@ -68,6 +69,8 @@ class SocietyLayoutGenerator:
             Dict with sectors, plots, roads, amenities, and statistics
         """
         logger.info(f"🏗️ Generating {layout_type} society layout for {self.total_area_sqm:.0f} sqm")
+        logger.info(f"📐 Polygon bounds: {self.polygon.bounds}")
+        logger.info(f"📊 Polygon area: {self.total_area_sqm / 4046.86:.2f} acres ({self.total_area_sqm:.0f} sqm)")
         
         # Step 1: Create main road network
         self._create_main_roads()
@@ -81,17 +84,60 @@ class SocietyLayoutGenerator:
         # Step 4: Place amenities intelligently
         self._place_amenities()
         
-        # Step 5: Generate statistics
+        # Step 5: Place entry gates
+        self._place_gates()
+        
+        # Step 6: Validate all elements are within polygon
+        self._validate_boundaries()
+        
+        # Step 7: Generate statistics
         stats = self._calculate_statistics()
+        
+        logger.info(f"✅ Layout generation complete:")
+        logger.info(f"   • {len(self.sectors)} sectors")
+        logger.info(f"   • {len(self.plots)} plots")
+        logger.info(f"   • {len(self.roads)} roads")
+        logger.info(f"   • {len(self.amenities)} amenities")
+        logger.info(f"   • {len(self.gates)} gates")
         
         return {
             'sectors': self.sectors,
             'plots': self.plots,
             'roads': self.roads,
             'amenities': self.amenities,
+            'gates': self.gates,
             'statistics': stats,
             'layout_type': layout_type
         }
+    
+    def _validate_boundaries(self):
+        """Validate that all generated elements are within polygon boundaries"""
+        logger.info("🔍 Validating boundary compliance...")
+        
+        # Check plots
+        outside_plots = 0
+        for plot in self.plots:
+            if not plot['geometry'].within(self.polygon):
+                # Check if it's mostly within
+                intersection = plot['geometry'].intersection(self.polygon)
+                if intersection.area < (plot['geometry'].area * 0.7):
+                    outside_plots += 1
+        
+        # Check amenities
+        outside_amenities = 0
+        for amenity in self.amenities:
+            if not amenity['geometry'].within(self.polygon):
+                outside_amenities += 1
+        
+        if outside_plots > 0:
+            logger.warning(f"⚠️ {outside_plots} plots are significantly outside polygon boundaries")
+        else:
+            logger.info(f"✅ All {len(self.plots)} plots are within polygon boundaries")
+        
+        if outside_amenities > 0:
+            logger.warning(f"⚠️ {outside_amenities} amenities are outside polygon boundaries")
+        else:
+            logger.info(f"✅ All {len(self.amenities)} amenities are within polygon boundaries")
     
     def _create_main_roads(self):
         """Create main boulevard and sector roads"""
@@ -225,7 +271,7 @@ class SocietyLayoutGenerator:
         logger.info(f"Generated {len(self.plots)} total plots")
     
     def _generate_plots_for_zone(self, sector_id, sector_geom, target_area, zone_type, preferred_size='5_marla'):
-        """Generate plots for a specific zone"""
+        """Generate plots for a specific zone with better boundary checking and realistic gaps"""
         plot_size_sqm = PLOT_SIZES.get(preferred_size, 126.45)
         num_plots = int(target_area / plot_size_sqm)
         
@@ -235,13 +281,18 @@ class SocietyLayoutGenerator:
         width = maxx - minx
         height = maxy - miny
         
-        # Calculate plot dimensions
+        # Calculate plot dimensions with realistic gaps (2 meters = ~0.000018 degrees)
         plot_width = math.sqrt(plot_size_sqm / 111320 / 111320)
         plot_height = plot_width
         
-        # Grid layout within sector
-        plots_per_row = max(1, int(width / plot_width))
-        plots_per_col = max(1, int(height / plot_height))
+        # Add gaps between plots (2 meters on each side)
+        gap_size = 0.000018  # ~2 meters in degrees
+        plot_width_with_gap = plot_width + gap_size
+        plot_height_with_gap = plot_height + gap_size
+        
+        # Grid layout within sector with gaps
+        plots_per_row = max(1, int(width / plot_width_with_gap))
+        plots_per_col = max(1, int(height / plot_height_with_gap))
         
         plot_count = 0
         for row in range(plots_per_col):
@@ -249,8 +300,9 @@ class SocietyLayoutGenerator:
                 if plot_count >= num_plots:
                     break
                 
-                plot_minx = minx + col * plot_width
-                plot_miny = miny + row * plot_height
+                # Add gap offset
+                plot_minx = minx + col * plot_width_with_gap + gap_size/2
+                plot_miny = miny + row * plot_height_with_gap + gap_size/2
                 plot_maxx = plot_minx + plot_width
                 plot_maxy = plot_miny + plot_height
                 
@@ -261,8 +313,9 @@ class SocietyLayoutGenerator:
                     (plot_minx, plot_maxy)
                 ])
                 
-                # Check if plot is within sector
-                if plot_polygon.within(sector_geom) or plot_polygon.intersects(sector_geom):
+                # More strict boundary checking - only add plots that are mostly within sector
+                if plot_polygon.within(sector_geom):
+                    # Plot is fully within sector
                     plot_count += 1
                     self.plots.append({
                         'id': f'{sector_id}-{plot_count}',
@@ -274,33 +327,81 @@ class SocietyLayoutGenerator:
                         'number': plot_count,
                         'center': (plot_polygon.centroid.x, plot_polygon.centroid.y)
                     })
+                elif plot_polygon.intersects(sector_geom):
+                    # Plot partially intersects - only add if >70% is within sector
+                    intersection = plot_polygon.intersection(sector_geom)
+                    if intersection.area > 0 and (intersection.area / plot_polygon.area) > 0.7:
+                        # Use the clipped geometry
+                        plot_count += 1
+                        clipped_polygon = intersection if hasattr(intersection, 'exterior') else plot_polygon
+                        self.plots.append({
+                            'id': f'{sector_id}-{plot_count}',
+                            'sector': sector_id,
+                            'geometry': clipped_polygon,
+                            'size_marlas': plot_size_sqm / 25.2929,
+                            'size_sqm': plot_size_sqm,
+                            'type': zone_type,
+                            'number': plot_count,
+                            'center': (clipped_polygon.centroid.x, clipped_polygon.centroid.y)
+                        })
             
             if plot_count >= num_plots:
                 break
     
     def _place_amenities(self):
-        """Intelligently place community amenities"""
+        """Intelligently place community amenities within polygon boundaries"""
         total_plots = len([p for p in self.plots if p['type'] == 'residential'])
         estimated_population = total_plots * 5  # ~5 people per plot
         
         area_acres = self.total_area_sqm / 4046.86
+        green_space_pct = self.percentages.get('green_space', 15)
+        
+        logger.info(f"📍 Placing amenities for {total_plots} plots, estimated population: {estimated_population}, area: {area_acres:.1f} acres")
+        logger.info(f"🌳 Target green space: {green_space_pct}% ({self.total_area_sqm * green_space_pct / 100:.0f} sqm)")
         
         # Place amenities based on society size
         amenity_configs = []
         
-        # Mosques (1 per 500 people, min 1)
-        num_mosques = max(1, estimated_population // 500)
+        # Mosques (1 per 500 people, min 1, max 1 per sector)
+        num_mosques = max(1, min(len(self.sectors), estimated_population // 500))
         amenity_configs.extend([
             {'type': 'mosque', 'size_sqm': 500, 'icon': '🕌', 'priority': 'high'}
             for _ in range(num_mosques)
         ])
         
-        # Parks (1 per sector)
-        num_parks = min(len(self.sectors), max(2, len(self.sectors)))
-        amenity_configs.extend([
-            {'type': 'park', 'size_sqm': 2000, 'icon': '🌳', 'priority': 'high'}
-            for _ in range(num_parks)
-        ])
+        # GREEN SPACES: Calculate based on user-specified percentage
+        target_green_space_sqm = self.total_area_sqm * (green_space_pct / 100)
+        # Allocate green space across sectors (parks, playgrounds, gardens)
+        num_sectors = len(self.sectors)
+        if num_sectors > 0:
+            green_space_per_sector = target_green_space_sqm / num_sectors
+            
+            # Create parks (large green spaces)
+            num_parks = max(2, min(num_sectors, int(green_space_pct // 3)))  # More parks for higher green space %
+            park_size = min(3000, green_space_per_sector * 0.6)  # 60% of sector green space for main parks
+            amenity_configs.extend([
+                {'type': 'park', 'size_sqm': park_size, 'icon': '🌳', 'priority': 'high'}
+                for _ in range(num_parks)
+            ])
+            
+            # Add playgrounds for residential areas
+            num_playgrounds = max(1, num_sectors // 2)
+            playground_size = min(1000, green_space_per_sector * 0.2)
+            amenity_configs.extend([
+                {'type': 'playground', 'size_sqm': playground_size, 'icon': '🎪', 'priority': 'medium'}
+                for _ in range(num_playgrounds)
+            ])
+            
+            # Add community gardens if green space % is high
+            if green_space_pct >= 20:
+                num_gardens = max(1, num_sectors // 3)
+                garden_size = min(800, green_space_per_sector * 0.2)
+                amenity_configs.extend([
+                    {'type': 'garden', 'size_sqm': garden_size, 'icon': '🌺', 'priority': 'low'}
+                    for _ in range(num_gardens)
+                ])
+        
+        logger.info(f"✅ Planned {sum(1 for a in amenity_configs if a['type'] in ['park', 'playground', 'garden'])} green space amenities")
         
         # Schools (if large enough)
         if area_acres > 10:
@@ -328,29 +429,151 @@ class SocietyLayoutGenerator:
                 'type': 'hospital', 'size_sqm': 2500, 'icon': '🏥', 'priority': 'medium'
             })
         
-        # Place each amenity
-        for i, config in enumerate(amenity_configs):
-            # Find best location (currently using sector centers, can be smarter)
-            if i < len(self.sectors):
-                sector = self.sectors[i]
+        # Place each amenity with better validation and spacing
+        sector_index = 0
+        amenity_counter = {}  # Track count per type for numbering
+        
+        for config in amenity_configs:
+            amenity_type = config['type']
+            amenity_counter[amenity_type] = amenity_counter.get(amenity_type, 0) + 1
+            count = amenity_counter[amenity_type]
+            
+            # Cycle through sectors for better distribution
+            if len(self.sectors) > 0:
+                sector = self.sectors[sector_index % len(self.sectors)]
+                sector_geom = sector['geometry']
                 center = sector['center']
                 
-                # Create amenity geometry (simple point for now)
+                # Offset center to avoid overlapping with other amenities
+                offset_x = (sector_index % 3 - 1) * 0.0002  # Small offset in lon
+                offset_y = ((sector_index // 3) % 3 - 1) * 0.0002  # Small offset in lat
+                offset_center = (center[0] + offset_x, center[1] + offset_y)
+                
+                # Create amenity geometry with proper sizing
                 amenity_size = math.sqrt(config['size_sqm'] / 111320 / 111320)
-                amenity_polygon = Point(center).buffer(amenity_size / 2)
+                amenity_polygon = Point(offset_center).buffer(amenity_size / 2)
+                
+                # Ensure amenity is within polygon boundaries
+                if not amenity_polygon.within(self.polygon):
+                    # Try to clip to polygon
+                    amenity_polygon = amenity_polygon.intersection(self.polygon)
+                    if amenity_polygon.is_empty or amenity_polygon.area == 0:
+                        logger.warning(f"⚠️ Could not place {amenity_type} {count} within polygon boundaries")
+                        sector_index += 1
+                        continue
+                
+                # Check for overlap with existing amenities
+                overlaps = False
+                for existing in self.amenities:
+                    if amenity_polygon.intersects(existing['geometry']):
+                        overlap_area = amenity_polygon.intersection(existing['geometry']).area
+                        if overlap_area > amenity_polygon.area * 0.3:  # Allow small overlaps
+                            overlaps = True
+                            break
+                
+                if overlaps:
+                    logger.debug(f"⚠️ {amenity_type} {count} overlaps, trying next location")
+                    sector_index += 1
+                    continue
                 
                 self.amenities.append({
-                    'id': f"{config['type']}_{i+1}",
-                    'type': config['type'],
+                    'id': f"{amenity_type}_{count}",
+                    'type': amenity_type,
                     'geometry': amenity_polygon,
                     'size_sqm': config['size_sqm'],
                     'icon': config['icon'],
                     'sector': sector['id'],
-                    'center': center,
-                    'name': f"{config['type'].replace('_', ' ').title()} {i+1}"
+                    'center': offset_center,
+                    'name': f"{amenity_type.replace('_', ' ').title()} {count}"
                 })
+                logger.info(f"✅ Placed {amenity_type} {count} in sector {sector['id']}")
+                sector_index += 1
         
-        logger.info(f"Placed {len(self.amenities)} amenities")
+        green_space_amenities = len([a for a in self.amenities if a['type'] in ['park', 'playground', 'garden']])
+        logger.info(f"✅ Successfully placed {len(self.amenities)} amenities ({green_space_amenities} green spaces)")
+    
+    def _place_gates(self):
+        """Place entry gates at strategic locations"""
+        bounds = self.polygon.bounds
+        minx, miny, maxx, maxy = bounds
+        
+        width = maxx - minx
+        height = maxy - miny
+        
+        # Main gate (bottom center - main entry)
+        main_gate_x = minx + width / 2
+        main_gate_y = miny
+        main_gate_point = Point(main_gate_x, main_gate_y)
+        
+        # Create main gate geometry
+        gate_size = 0.00005  # Slightly larger for main gate
+        main_gate_geom = main_gate_point.buffer(gate_size)
+        
+        self.gates.append({
+            'id': 'main_gate',
+            'type': 'main',
+            'geometry': main_gate_geom,
+            'center': (main_gate_x, main_gate_y),
+            'name': 'Main Gate',
+            'icon': '🚪',
+            'position': 'south'
+        })
+        
+        # Secondary gates based on society size
+        area_acres = self.total_area_sqm / 4046.86
+        
+        if area_acres > 20:
+            # Add secondary gate (top center)
+            secondary_gate_x = minx + width / 2
+            secondary_gate_y = maxy
+            secondary_gate_point = Point(secondary_gate_x, secondary_gate_y)
+            secondary_gate_geom = secondary_gate_point.buffer(gate_size * 0.8)
+            
+            self.gates.append({
+                'id': 'secondary_gate_north',
+                'type': 'secondary',
+                'geometry': secondary_gate_geom,
+                'center': (secondary_gate_x, secondary_gate_y),
+                'name': 'North Gate',
+                'icon': '🚪',
+                'position': 'north'
+            })
+        
+        if area_acres > 40:
+            # Add side gates for larger societies
+            # East gate
+            east_gate_x = maxx
+            east_gate_y = miny + height / 2
+            east_gate_point = Point(east_gate_x, east_gate_y)
+            east_gate_geom = east_gate_point.buffer(gate_size * 0.7)
+            
+            self.gates.append({
+                'id': 'side_gate_east',
+                'type': 'service',
+                'geometry': east_gate_geom,
+                'center': (east_gate_x, east_gate_y),
+                'name': 'East Service Gate',
+                'icon': '🚪',
+                'position': 'east'
+            })
+            
+            # West gate
+            west_gate_x = minx
+            west_gate_y = miny + height / 2
+            west_gate_point = Point(west_gate_x, west_gate_y)
+            west_gate_geom = west_gate_point.buffer(gate_size * 0.7)
+            
+            self.gates.append({
+                'id': 'side_gate_west',
+                'type': 'service',
+                'geometry': west_gate_geom,
+                'center': (west_gate_x, west_gate_y),
+                'name': 'West Service Gate',
+                'icon': '🚪',
+                'position': 'west'
+            })
+        
+        logger.info(f"✅ Placed {len(self.gates)} gates (1 main, {len(self.gates)-1} secondary/service)")
     
     def _calculate_statistics(self):
         """Calculate comprehensive society statistics"""
@@ -451,6 +674,18 @@ def generate_society_layout_dict(polygon_coords, percentages, terrain_data=None,
                 'coordinates': list(a['geometry'].exterior.coords) if hasattr(a['geometry'], 'exterior') else [a['center']]
             }
             for a in layout['amenities']
+        ],
+        'gates': [
+            {
+                'id': g['id'],
+                'type': g['type'],
+                'center': g['center'],
+                'name': g['name'],
+                'icon': g['icon'],
+                'position': g['position'],
+                'coordinates': list(g['geometry'].exterior.coords) if hasattr(g['geometry'], 'exterior') else [g['center']]
+            }
+            for g in layout.get('gates', [])
         ],
         'statistics': layout['statistics'],
         'layout_type': layout['layout_type']
